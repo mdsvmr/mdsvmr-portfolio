@@ -202,6 +202,7 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
+  padding: 8px 0;
 }
 
 .button {
@@ -456,10 +457,6 @@ p {
   }
 
   /* Index */
-  .main--index {
-    gap: 20px;
-  }
-
   .main--index .intro {
     gap: 16px;
   }
@@ -482,24 +479,13 @@ p {
     gap: 24px;
   }
 
-  /* About: content on top, actions + connect at the bottom of the screen */
+  /* About */
   .main--about .intro {
     gap: 16px;
   }
 
   .main--about .experiences {
     --company-col: 120px;
-    margin-top: 8px; /* 24px gap + 8px = 32px */
-  }
-
-  .main--about .actions {
-    margin-top: auto;
-    padding-top: 8px;
-  }
-
-  .main--about .connect {
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
   }
 }
 
