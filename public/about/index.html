@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About — Fahreza Sugiono</title>
+  <meta name="description" content="Senior Product Designer based in Indonesia, with AI-native experiences to help companies create bold identities and intuitive digital products." />
+  <link rel="preload" href="/fonts/GoogleSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    // Intro plays on the first visit and on every refresh; a refresh always lands on Index.
+    try {
+      var nav = performance.getEntriesByType("navigation")[0];
+      var isReload = !!nav && nav.type === "reload";
+      var forced = sessionStorage.getItem("intro-force") === "1";
+      sessionStorage.removeItem("intro-force");
+      if (isReload && location.pathname !== "/") {
+        sessionStorage.setItem("intro-force", "1");
+        window.__introRedirect = true;
+        document.documentElement.classList.add("is-intro");
+        location.replace("/");
+      } else if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (isReload || forced || !sessionStorage.getItem("intro-seen")) {
+          document.documentElement.classList.add("is-intro");
+          setTimeout(function () { document.documentElement.classList.remove("is-intro", "is-intro-ready"); }, 6000);
+        } else {
+          // Navigating between pages: main blocks rise + fade in one by one.
+          document.documentElement.classList.add("is-enter");
+          setTimeout(function () { document.documentElement.classList.remove("is-enter", "is-enter-ready"); }, 3000);
+        }
+      }
+    } catch (e) {}
+  </script>
+  <link rel="preload" href="/assets/logo.png" as="image" />
+</head>
+<body>
+  <div class="page">
+    <aside class="left">
+      <div class="left__content">
+        <a href="/" class="logo" aria-label="MDSVMR home">
+          <img src="/assets/logo.png" alt="MDSVMR" />
+        </a>
+        <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-menu">
+          <span class="menu-toggle__line"></span>
+          <span class="menu-toggle__line"></span>
+        </button>
+        <div class="menu-panel">
+          <nav class="menu" id="site-menu" aria-label="Main">
+            <a href="/" class="link">Index</a>
+            <a href="/projects/" class="link">Projects</a>
+            <a href="/works/" class="link">Works</a>
+            <a href="/moments/" class="link">Moments</a>
+            <a href="/about/" class="link is-active" aria-current="page">About</a>
+          </nav>
+        </div>
+        <div class="left__divider" aria-hidden="true"></div>
+      </div>
+    </aside>
+
+    <main class="main main--about">
+      <section class="intro">
+        <div class="group">
+          <h1 class="strong page-title">About Me</h1>
+          <p>Senior Product Designer Based in Indonesia, with AI-native experiences to help companies create bold identities and intuitive digital products.</p>
+        </div>
+        <p>My design process combines analytical problem solving with a strong visual aesthetic. I integrate AI to elevate output delivering sharper insights and higher quality of design.</p>
+      </section>
+
+      <section class="experiences">
+        <h2 class="strong page-title">Experiences</h2>
+        <ul class="experiences__list">
+          <li class="experience">
+            <a href="https://www.shopra.ai/" class="link experience__company" target="_blank" rel="noopener">Shopra</a>
+            <span class="experience__role">Product Designer</span>
+            <span class="experience__year">2025</span>
+          </li>
+          <li class="experience">
+            <a href="https://www.ezpairs.xyz/" class="link experience__company" target="_blank" rel="noopener">Ezpairs</a>
+            <span class="experience__role">Founding Designer</span>
+            <span class="experience__year">2025</span>
+          </li>
+          <li class="experience">
+            <a href="https://www.dipainhouse.com/" class="link experience__company" target="_blank" rel="noopener">Dipa Inhouse</a>
+            <span class="experience__role">Senior UI/UX Designer</span>
+            <span class="experience__year">2024</span>
+          </li>
+          <li class="experience experience--continued">
+            <span class="experience__company" aria-hidden="true"></span>
+            <span class="experience__role">UI/UX Designer</span>
+            <span class="experience__year">2021</span>
+          </li>
+          <li class="experience">
+            <a href="https://skilvul.com/" class="link experience__company" target="_blank" rel="noopener">Skilvul</a>
+            <span class="experience__role">UI/UX Designer Intern</span>
+            <span class="experience__year">2021</span>
+          </li>
+          <li class="experience">
+            <a href="https://slabdsgn.com/" class="link experience__company" target="_blank" rel="noopener">Slab Design</a>
+            <span class="experience__role">UI Designer Intern</span>
+            <span class="experience__year">2021</span>
+          </li>
+        </ul>
+      </section>
+
+      <div class="actions">
+        <a href="mailto:mokhammadfahreza@gmail.com" class="button button--primary" target="_blank" rel="noopener">Start a Project</a>
+        <a href="https://t.me/fahrezas" class="button button--secondary" target="_blank" rel="noopener">Quick Chat</a>
+      </div>
+
+      <section class="group connect">
+        <h2 class="strong page-title">Connect</h2>
+        <p>
+          <a href="https://www.instagram.com/mdsvmr" class="link" target="_blank" rel="noopener">Instagram</a>, <a href="https://www.behance.net/fahrezasugiono" class="link" target="_blank" rel="noopener">Behance</a>, <a href="https://medium.com/@fahrezasugiono" class="link" target="_blank" rel="noopener">Medium</a>, <a href="https://www.linkedin.com/in/mokhammadfahreza/" class="link" target="_blank" rel="noopener">Linkedin</a>.
+        </p>
+      </section>
+    </main>
+
+    <div class="right" aria-hidden="true"></div>
+  </div>
+  <script src="/intro.js" defer></script>
+  <script src="/nav.js" defer></script>
+</body>
+</html>

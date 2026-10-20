@@ -1,0 +1,646 @@
+@font-face {
+  font-family: "Google Sans";
+  src: url("/fonts/GoogleSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --text-primary: #101d2f;
+  --border: #e9f0f6;
+  --text-secondary: #6c7c93;
+  --surface-muted: #edeff2;
+  --bg: #ffffff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-family: "Google Sans", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+p {
+  margin: 0;
+}
+
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+/* Left column */
+.left {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.left__content {
+  padding: 80px 80px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.logo {
+  display: block;
+  width: 94px;
+  height: 20px;
+}
+
+.logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* Dotted underline links */
+.link {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-decoration-skip-ink: none;
+  text-underline-position: from-font;
+  transition: color 0.15s ease;
+}
+
+.link:hover,
+.link.is-active {
+  color: var(--text-primary);
+}
+
+/* Main column */
+.main {
+  flex: 0 1 560px;
+  min-width: 0;
+  max-width: 560px;
+  padding: 80px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.strong {
+  color: var(--text-primary);
+}
+
+.showcase {
+  margin: 0;
+  width: 100%;
+  height: 350px;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+.showcase video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.page-title {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+/* About */
+.experiences {
+  --company-col: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.experiences__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.experience {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--company-col) 1fr auto;
+  align-items: start;
+}
+
+.experience + .experience {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Second role at the same company: divider starts at the role column */
+.experience + .experience--continued {
+  border-top-color: transparent;
+}
+
+.experience + .experience--continued::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: var(--company-col);
+  right: 0;
+  height: 1px;
+  background: var(--border);
+}
+
+.experience__company {
+  justify-self: start;
+}
+
+.experience__role {
+  color: var(--text-primary);
+}
+
+.experience__year {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 40px;
+  font-size: 14px;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.button--primary {
+  background: var(--text-primary);
+  color: #ffffff;
+}
+
+.button--primary:hover {
+  opacity: 0.88;
+}
+
+.button--secondary {
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.button--secondary:hover {
+  background: #f5f8fb;
+}
+
+/* Works */
+.work__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface-muted);
+}
+
+/* Moments */
+.moments {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.moments__col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.moments__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface-muted);
+}
+
+/* Projects */
+.project {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.project__title {
+  align-self: flex-start;
+}
+
+.project__image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.right {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Desktop: sidebar is fixed so it stays put while the page rubber-bands */
+@media (min-width: 1001px) {
+  .left__content {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+}
+
+/* Mobile header parts (hidden on desktop) */
+.menu-toggle,
+.left__divider {
+  display: none;
+}
+
+/* Mobile & tablet (Figma: 375px frames) */
+@media (max-width: 1000px) {
+  .page {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .right {
+    display: none;
+  }
+
+  /* Header sticks to the top; it slides up while scrolling down and back on scroll up */
+  .left {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    transition: transform 480ms cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
+  }
+
+  .left.is-hidden {
+    transform: translateY(-100%);
+  }
+
+  /* Header: logo + menu toggle, collapsible menu, divider */
+  .left__content {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 24px 20px 0;
+    background: var(--bg);
+  }
+
+  .logo {
+    width: 113px;
+    height: 24px;
+  }
+
+  .menu-toggle {
+    display: block;
+    position: relative;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .menu-toggle__line {
+    position: absolute;
+    left: 4px;
+    width: 16px;
+    height: 1.5px;
+    background: #000000;
+    transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .menu-toggle__line:first-child {
+    top: 8px;
+  }
+
+  .menu-toggle__line:last-child {
+    top: 16px;
+  }
+
+  /* Open: both lines meet in the middle (Figma "Active") */
+  .left__content.is-open .menu-toggle__line:first-child {
+    transform: translateY(3.25px);
+  }
+
+  .left__content.is-open .menu-toggle__line:last-child {
+    transform: translateY(-4.75px);
+  }
+
+  .menu-panel {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 520ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .left__content.is-open .menu-panel {
+    grid-template-rows: 1fr;
+  }
+
+  .menu {
+    min-height: 0;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, auto);
+    grid-auto-flow: column;
+    justify-items: start;
+    column-gap: 20px;
+    row-gap: 8px;
+    padding-top: 0;
+    transition: padding-top 520ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .left__content.is-open .menu {
+    padding-top: 24px;
+  }
+
+  .menu .link {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 200ms ease, transform 200ms ease, color 0.15s ease;
+  }
+
+  .left__content.is-open .menu .link {
+    opacity: 1;
+    transform: none;
+    transition: opacity 600ms cubic-bezier(0.16, 1, 0.3, 1), transform 600ms cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease;
+  }
+
+  .left__content.is-open .menu .link:nth-child(1) { transition-delay: 80ms, 80ms, 0s; }
+  .left__content.is-open .menu .link:nth-child(2) { transition-delay: 120ms, 120ms, 0s; }
+  .left__content.is-open .menu .link:nth-child(3) { transition-delay: 160ms, 160ms, 0s; }
+  .left__content.is-open .menu .link:nth-child(4) { transition-delay: 200ms, 200ms, 0s; }
+  .left__content.is-open .menu .link:nth-child(5) { transition-delay: 240ms, 240ms, 0s; }
+
+  .left__divider {
+    display: block;
+    grid-column: 1 / -1;
+    height: 1px;
+    margin-top: 24px;
+    background: var(--border);
+  }
+
+  /* Main */
+  .main {
+    flex: 1 0 auto;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 23px 20px 24px; /* 23px + 1px header divider = 24px, as in Figma */
+    gap: 24px;
+    font-size: 14px;
+  }
+
+  .group {
+    gap: 6px;
+  }
+
+  /* Index */
+  .main--index {
+    gap: 20px;
+  }
+
+  .main--index .intro {
+    gap: 16px;
+  }
+
+  .showcase {
+    height: auto;
+    aspect-ratio: 560 / 350;
+  }
+
+  /* Projects */
+  .project {
+    gap: 12px;
+  }
+
+  /* Moments: one column, left column first then right */
+  .moments,
+  .moments__col {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+  }
+
+  /* About: content on top, actions + connect at the bottom of the screen */
+  .main--about .intro {
+    gap: 16px;
+  }
+
+  .main--about .experiences {
+    --company-col: 120px;
+    margin-top: 8px; /* 24px gap + 8px = 32px */
+  }
+
+  .main--about .actions {
+    margin-top: auto;
+    padding-top: 8px;
+  }
+
+  .main--about .connect {
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 1000px) {
+  .page {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+}
+
+/* Page transitions: fade only the main column, keep the sidebar still */
+@view-transition {
+  navigation: auto;
+}
+
+.main {
+  view-transition-name: main;
+}
+
+.left__content {
+  view-transition-name: sidebar;
+}
+
+::view-transition-group(root),
+::view-transition-group(sidebar),
+::view-transition-old(sidebar),
+::view-transition-new(sidebar) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  display: none;
+}
+
+::view-transition-group(main) {
+  animation: none;
+}
+
+::view-transition-old(main) {
+  animation: fade-out 140ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+/* The new page's main blocks animate themselves (intro.js), so no container fade */
+::view-transition-new(main) {
+  animation: none;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(main),
+  ::view-transition-new(main) {
+    animation: none;
+  }
+
+  .main {
+    animation: none;
+  }
+}
+
+/* Zoom (click media to view larger) */
+.showcase,
+.work__image,
+.moments__image {
+  cursor: pointer;
+}
+
+.showcase:focus-visible,
+.work__image:focus-visible,
+.moments__image:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 4px;
+}
+
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  cursor: zoom-out;
+}
+
+.zoom-media {
+  position: fixed;
+  z-index: 101;
+  margin: 0;
+  max-width: none;
+  aspect-ratio: auto;
+  object-fit: cover;
+  transform-origin: 0 0;
+  will-change: transform;
+  cursor: default;
+}
+
+/* Intro: centered logo placeholder until intro.js takes over */
+html.is-intro:not(.is-intro-ready) .main,
+html.is-intro:not(.is-intro-ready) .menu,
+html.is-intro:not(.is-intro-ready) .menu-toggle,
+html.is-intro:not(.is-intro-ready) .left__divider,
+html.is-enter:not(.is-enter-ready) .main {
+  opacity: 0;
+}
+
+html.is-intro .logo {
+  visibility: hidden;
+}
+
+html.is-intro.is-intro-ready .logo {
+  visibility: visible;
+  position: relative;
+  z-index: 2;
+  will-change: transform;
+}
+
+html.is-intro:not(.is-intro-ready) body::after {
+  content: "";
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 94px;
+  height: 20px;
+  margin: -10px 0 0 -47px;
+  background: url("/assets/logo.png") center / contain no-repeat;
+  z-index: 200;
+}
+
+@media (max-width: 1000px) {
+  html.is-intro:not(.is-intro-ready) body::after {
+    width: 113px;
+    height: 24px;
+    margin: -12px 0 0 -56.5px;
+  }
+}

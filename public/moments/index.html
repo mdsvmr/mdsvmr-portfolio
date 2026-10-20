@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moments — Fahreza Sugiono</title>
+  <meta name="description" content="Life through the lens. A collection of visual stories captured by Fujifilm X-M5." />
+  <link rel="preload" href="/fonts/GoogleSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    // Intro plays on the first visit and on every refresh; a refresh always lands on Index.
+    try {
+      var nav = performance.getEntriesByType("navigation")[0];
+      var isReload = !!nav && nav.type === "reload";
+      var forced = sessionStorage.getItem("intro-force") === "1";
+      sessionStorage.removeItem("intro-force");
+      if (isReload && location.pathname !== "/") {
+        sessionStorage.setItem("intro-force", "1");
+        window.__introRedirect = true;
+        document.documentElement.classList.add("is-intro");
+        location.replace("/");
+      } else if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (isReload || forced || !sessionStorage.getItem("intro-seen")) {
+          document.documentElement.classList.add("is-intro");
+          setTimeout(function () { document.documentElement.classList.remove("is-intro", "is-intro-ready"); }, 6000);
+        } else {
+          // Navigating between pages: main blocks rise + fade in one by one.
+          document.documentElement.classList.add("is-enter");
+          setTimeout(function () { document.documentElement.classList.remove("is-enter", "is-enter-ready"); }, 3000);
+        }
+      }
+    } catch (e) {}
+  </script>
+  <link rel="preload" href="/assets/logo.png" as="image" />
+</head>
+<body>
+  <div class="page">
+    <aside class="left">
+      <div class="left__content">
+        <a href="/" class="logo" aria-label="MDSVMR home">
+          <img src="/assets/logo.png" alt="MDSVMR" />
+        </a>
+        <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-menu">
+          <span class="menu-toggle__line"></span>
+          <span class="menu-toggle__line"></span>
+        </button>
+        <div class="menu-panel">
+          <nav class="menu" id="site-menu" aria-label="Main">
+            <a href="/" class="link">Index</a>
+            <a href="/projects/" class="link">Projects</a>
+            <a href="/works/" class="link">Works</a>
+            <a href="/moments/" class="link is-active" aria-current="page">Moments</a>
+            <a href="/about/" class="link">About</a>
+          </nav>
+        </div>
+        <div class="left__divider" aria-hidden="true"></div>
+      </div>
+    </aside>
+
+    <main class="main main--moments">
+      <section class="group">
+        <h1 class="strong page-title">Moments</h1>
+        <p>Life through the lens. A collection of visual stories captured by Fujifilm X-M5.</p>
+      </section>
+
+      <div class="moments">
+        <div class="moments__col">
+          <img class="moments__image" src="/assets/moments/1.png" width="1032" height="1302" decoding="async" alt="Moment photo 1" />
+          <img class="moments__image" src="/assets/moments/5.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 2" />
+          <img class="moments__image" src="/assets/moments/3.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 3" />
+          <img class="moments__image" src="/assets/moments/9.png" width="1032" height="688" loading="lazy" decoding="async" alt="Moment photo 4" />
+          <img class="moments__image" src="/assets/moments/8.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 5" />
+          <img class="moments__image" src="/assets/moments/6.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 6" />
+        </div>
+        <div class="moments__col">
+          <img class="moments__image" src="/assets/moments/4.png" width="1032" height="688" decoding="async" alt="Moment photo 7" />
+          <img class="moments__image" src="/assets/moments/2.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 8" />
+          <img class="moments__image" src="/assets/moments/10.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 9" />
+          <img class="moments__image" src="/assets/moments/11.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 10" />
+          <img class="moments__image" src="/assets/moments/12.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 11" />
+          <img class="moments__image" src="/assets/moments/13.png" width="1032" height="1302" loading="lazy" decoding="async" alt="Moment photo 12" />
+        </div>
+      </div>
+    </main>
+
+    <div class="right" aria-hidden="true"></div>
+  </div>
+  <script src="/zoom.js" defer></script>
+  <script src="/intro.js" defer></script>
+  <script src="/nav.js" defer></script>
+</body>
+</html>

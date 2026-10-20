@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Works — Fahreza Sugiono</title>
+  <meta name="description" content="Visual crafts and concepts reflecting my design aesthetics and taste." />
+  <link rel="preload" href="/fonts/GoogleSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    // Intro plays on the first visit and on every refresh; a refresh always lands on Index.
+    try {
+      var nav = performance.getEntriesByType("navigation")[0];
+      var isReload = !!nav && nav.type === "reload";
+      var forced = sessionStorage.getItem("intro-force") === "1";
+      sessionStorage.removeItem("intro-force");
+      if (isReload && location.pathname !== "/") {
+        sessionStorage.setItem("intro-force", "1");
+        window.__introRedirect = true;
+        document.documentElement.classList.add("is-intro");
+        location.replace("/");
+      } else if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (isReload || forced || !sessionStorage.getItem("intro-seen")) {
+          document.documentElement.classList.add("is-intro");
+          setTimeout(function () { document.documentElement.classList.remove("is-intro", "is-intro-ready"); }, 6000);
+        } else {
+          // Navigating between pages: main blocks rise + fade in one by one.
+          document.documentElement.classList.add("is-enter");
+          setTimeout(function () { document.documentElement.classList.remove("is-enter", "is-enter-ready"); }, 3000);
+        }
+      }
+    } catch (e) {}
+  </script>
+  <link rel="preload" href="/assets/logo.png" as="image" />
+</head>
+<body>
+  <div class="page">
+    <aside class="left">
+      <div class="left__content">
+        <a href="/" class="logo" aria-label="MDSVMR home">
+          <img src="/assets/logo.png" alt="MDSVMR" />
+        </a>
+        <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-menu">
+          <span class="menu-toggle__line"></span>
+          <span class="menu-toggle__line"></span>
+        </button>
+        <div class="menu-panel">
+          <nav class="menu" id="site-menu" aria-label="Main">
+            <a href="/" class="link">Index</a>
+            <a href="/projects/" class="link">Projects</a>
+            <a href="/works/" class="link is-active" aria-current="page">Works</a>
+            <a href="/moments/" class="link">Moments</a>
+            <a href="/about/" class="link">About</a>
+          </nav>
+        </div>
+        <div class="left__divider" aria-hidden="true"></div>
+      </div>
+    </aside>
+
+    <main class="main main--works">
+      <section class="group">
+        <h1 class="strong page-title">Works</h1>
+        <p>Visual crafts and concepts reflecting my design aesthetics and taste.</p>
+      </section>
+      <img class="work__image" src="/assets/works/1.png" width="1808" height="1360" decoding="async" alt="Visual exploration 1" />
+      <img class="work__image" src="/assets/works/2.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 2" />
+      <img class="work__image" src="/assets/works/3.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 3" />
+      <img class="work__image" src="/assets/works/4.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 4" />
+      <img class="work__image" src="/assets/works/5.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 5" />
+      <img class="work__image" src="/assets/works/6.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 6" />
+      <img class="work__image" src="/assets/works/7.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 7" />
+      <img class="work__image" src="/assets/works/8.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 8" />
+      <img class="work__image" src="/assets/works/9.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 9" />
+      <img class="work__image" src="/assets/works/10.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 10" />
+      <img class="work__image" src="/assets/works/11.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 11" />
+      <img class="work__image" src="/assets/works/12.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 12" />
+      <img class="work__image" src="/assets/works/13.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 13" />
+      <img class="work__image" src="/assets/works/14.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 14" />
+      <img class="work__image" src="/assets/works/15.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 15" />
+      <img class="work__image" src="/assets/works/16.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 16" />
+      <img class="work__image" src="/assets/works/17.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 17" />
+      <img class="work__image" src="/assets/works/18.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 18" />
+      <img class="work__image" src="/assets/works/19.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 19" />
+      <img class="work__image" src="/assets/works/20.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 20" />
+      <img class="work__image" src="/assets/works/21.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 21" />
+      <img class="work__image" src="/assets/works/22.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 22" />
+      <img class="work__image" src="/assets/works/23.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 23" />
+      <img class="work__image" src="/assets/works/24.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 24" />
+      <img class="work__image" src="/assets/works/25.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 25" />
+      <img class="work__image" src="/assets/works/26.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 26" />
+      <img class="work__image" src="/assets/works/27.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 27" />
+      <img class="work__image" src="/assets/works/28.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 28" />
+      <img class="work__image" src="/assets/works/29.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 29" />
+      <img class="work__image" src="/assets/works/30.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 30" />
+      <img class="work__image" src="/assets/works/31.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 31" />
+      <img class="work__image" src="/assets/works/32.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 32" />
+      <img class="work__image" src="/assets/works/33.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 33" />
+      <img class="work__image" src="/assets/works/34.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 34" />
+      <img class="work__image" src="/assets/works/35.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 35" />
+      <img class="work__image" src="/assets/works/36.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 36" />
+      <img class="work__image" src="/assets/works/37.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 37" />
+      <img class="work__image" src="/assets/works/38.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 38" />
+      <img class="work__image" src="/assets/works/39.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 39" />
+      <img class="work__image" src="/assets/works/40.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 40" />
+      <img class="work__image" src="/assets/works/41.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 41" />
+      <img class="work__image" src="/assets/works/42.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 42" />
+      <img class="work__image" src="/assets/works/43.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 43" />
+      <img class="work__image" src="/assets/works/44.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 44" />
+    </main>
+
+    <div class="right" aria-hidden="true"></div>
+  </div>
+  <script src="/zoom.js" defer></script>
+  <script src="/intro.js" defer></script>
+  <script src="/nav.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Source files (the site only uses copies inside public/)
+Resources/
+Google Sans/
+
+# Local tooling
+.claude/
+.vercel/
+
+# macOS
+.DS_Store

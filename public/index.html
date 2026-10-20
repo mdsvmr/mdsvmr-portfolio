@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fahreza Sugiono</title>
+  <meta name="description" content="Senior Product Designer with AI-native experiences to help companies create bold identities and intuitive digital products." />
+  <link rel="preload" href="/fonts/GoogleSans-Regular.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script>
+    // Intro plays on the first visit and on every refresh; a refresh always lands on Index.
+    try {
+      var nav = performance.getEntriesByType("navigation")[0];
+      var isReload = !!nav && nav.type === "reload";
+      var forced = sessionStorage.getItem("intro-force") === "1";
+      sessionStorage.removeItem("intro-force");
+      if (isReload && location.pathname !== "/") {
+        sessionStorage.setItem("intro-force", "1");
+        window.__introRedirect = true;
+        document.documentElement.classList.add("is-intro");
+        location.replace("/");
+      } else if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (isReload || forced || !sessionStorage.getItem("intro-seen")) {
+          document.documentElement.classList.add("is-intro");
+          setTimeout(function () { document.documentElement.classList.remove("is-intro", "is-intro-ready"); }, 6000);
+        } else {
+          // Navigating between pages: main blocks rise + fade in one by one.
+          document.documentElement.classList.add("is-enter");
+          setTimeout(function () { document.documentElement.classList.remove("is-enter", "is-enter-ready"); }, 3000);
+        }
+      }
+    } catch (e) {}
+  </script>
+  <link rel="preload" href="/assets/logo.png" as="image" />
+</head>
+<body>
+  <div class="page">
+    <aside class="left">
+      <div class="left__content">
+        <a href="/" class="logo" aria-label="MDSVMR home">
+          <img src="/assets/logo.png" alt="MDSVMR" />
+        </a>
+        <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="site-menu">
+          <span class="menu-toggle__line"></span>
+          <span class="menu-toggle__line"></span>
+        </button>
+        <div class="menu-panel">
+          <nav class="menu" id="site-menu" aria-label="Main">
+            <a href="/" class="link is-active" aria-current="page">Index</a>
+            <a href="/projects/" class="link">Projects</a>
+            <a href="/works/" class="link">Works</a>
+            <a href="/moments/" class="link">Moments</a>
+            <a href="/about/" class="link">About</a>
+          </nav>
+        </div>
+        <div class="left__divider" aria-hidden="true"></div>
+      </div>
+    </aside>
+
+    <main class="main main--index">
+      <section class="intro">
+        <div class="group">
+          <p class="strong">Fahreza Sugiono</p>
+          <p>Senior Product Designer with AI-native experiences to help companies create bold identities and intuitive digital products.</p>
+        </div>
+
+        <div class="group">
+          <p class="strong">Current</p>
+          <p>Designing <a href="https://www.shopra.ai/" class="link" target="_blank" rel="noopener">Shopra</a></p>
+          <p>Unifies supply and retail data into a single intelligence layer so teams can act faster, and grow smarter.</p>
+        </div>
+
+        <div class="group">
+          <p class="strong">Past</p>
+          <p>
+            <a href="https://www.ezpairs.xyz/" class="link" target="_blank" rel="noopener">Ezpairs</a>, <a href="https://www.dipainhouse.com/" class="link" target="_blank" rel="noopener">Dipa Inhouse</a>, <a href="https://skilvul.com/" class="link" target="_blank" rel="noopener">Skilvul</a>, <a href="https://slabdsgn.com/" class="link" target="_blank" rel="noopener">Slab</a>, etc.
+          </p>
+        </div>
+      </section>
+
+      <figure class="showcase">
+        <video src="/media/Chart.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Ethereum price chart app on iPhone"></video>
+      </figure>
+      <figure class="showcase">
+        <video src="/media/Card.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Card animation: Bringing the highest level of quality"></video>
+      </figure>
+      <figure class="showcase">
+        <video src="/media/Ezpair.mp4" autoplay muted loop playsinline preload="metadata" aria-label="Ezpair app icon"></video>
+      </figure>
+    </main>
+
+    <div class="right" aria-hidden="true"></div>
+  </div>
+  <script src="/zoom.js" defer></script>
+  <script src="/intro.js" defer></script>
+  <script src="/nav.js" defer></script>
+</body>
+</html>
