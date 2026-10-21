@@ -46,8 +46,10 @@
         items.push(el);
       }
     });
-    // Only stagger what is on screen; anything off screen is simply shown.
-    var limit = window.innerHeight;
+    // Only stagger what can be seen; anything further down is simply shown.
+    // On iPhone the translucent Safari toolbar shows content below innerHeight,
+    // so the limit reaches the full screen height plus a little margin.
+    var limit = Math.max(window.innerHeight, window.screen ? window.screen.height : 0) + 120;
     return items.filter(function (el) {
       var r = el.getBoundingClientRect();
       return r.top < limit && r.bottom > 0;
