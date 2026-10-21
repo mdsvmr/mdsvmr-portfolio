@@ -311,6 +311,13 @@ p {
   height: auto;
 }
 
+/* Keeps the video's own 4:3 shape at any width (no letterboxing or cropping) */
+.project__video {
+  aspect-ratio: 1920 / 1440;
+  object-fit: cover;
+  background: var(--surface-muted);
+}
+
 .right {
   flex: 1 1 0;
   min-width: 0;
