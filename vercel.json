@@ -1,4 +1,16 @@
 {
   "outputDirectory": "public",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/moments",
+      "destination": "/frames/",
+      "permanent": true
+    },
+    {
+      "source": "/moments/",
+      "destination": "/frames/",
+      "permanent": true
+    }
+  ]
 }
