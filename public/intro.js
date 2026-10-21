@@ -24,12 +24,16 @@
   var ENTER_DELAY = 120; // lets the previous page's content fade out first
 
   // Main blocks in reading order. Wrappers are expanded so each block appears on its own:
-  // the Index/About intro into its paragraphs, the Moments grid into its photos.
+  // the Index/About intro into its paragraphs, the Index "built" list into its title and
+  // videos, the Moments grid into its photos.
   function mainItems() {
     var items = [];
     Array.prototype.forEach.call(main.children, function (el) {
       if (el.classList.contains("intro")) {
         items.push.apply(items, el.children);
+      } else if (el.classList.contains("built")) {
+        items.push(el.querySelector(".page-title"));
+        items.push.apply(items, el.querySelectorAll(".built__item"));
       } else if (el.classList.contains("moments")) {
         var photos = Array.prototype.slice.call(el.querySelectorAll(".moments__image"));
         photos.sort(function (a, b) {

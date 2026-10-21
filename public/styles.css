@@ -136,6 +136,33 @@ p {
   object-fit: cover;
 }
 
+/* Index: "Something i built recently" — each video with a caption under it */
+.built {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px; /* 40px main gap + 8px = 48px */
+}
+
+.built__list {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.built__item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.built__caption {
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .page-title {
   margin: 0;
   font-size: inherit;
@@ -459,6 +486,23 @@ p {
   /* Index */
   .main--index .intro {
     gap: 16px;
+  }
+
+  .built {
+    gap: 12px;
+    margin-top: 16px; /* 24px main gap + 16px = 40px */
+  }
+
+  .built__list {
+    gap: 20px;
+  }
+
+  .built__item {
+    gap: 12px;
+  }
+
+  .built__caption {
+    font-size: 12px;
   }
 
   .showcase {
