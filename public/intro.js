@@ -137,7 +137,9 @@
     var mobile = window.matchMedia("(max-width: 1000px)").matches;
     var links = mobile
       ? [".menu-toggle", ".left__divider"].map(function (q) { return document.querySelector(q); }).filter(Boolean)
-      : Array.prototype.slice.call(menu.children);
+      : Array.prototype.slice.call(menu.children)
+          .filter(function (el) { return el.offsetParent !== null; }) // skip the mobile-only language switch
+          .concat(Array.prototype.slice.call(document.querySelectorAll(".lang-switch--desktop")));
     staged = items.concat(links);
     // Hide each item individually before the containers are revealed (same frame, no flash).
     staged.forEach(function (el) { el.style.opacity = "0"; });

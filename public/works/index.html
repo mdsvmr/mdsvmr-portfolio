@@ -9,6 +9,13 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/styles.css" />
   <script>
+    // Saved language: keep translatable text hidden until i18n.js has applied it (no flash of English).
+    try {
+      if (localStorage.getItem("lang") === "ja") {
+        document.documentElement.lang = "ja";
+        document.documentElement.classList.add("lang-pending");
+      }
+    } catch (e) {}
     // Intro plays on the first visit and on every refresh; a refresh always lands on Index.
     try {
       var nav = performance.getEntriesByType("navigation")[0];
@@ -47,11 +54,15 @@
         </button>
         <div class="menu-panel">
           <nav class="menu" id="site-menu" aria-label="Main">
-            <a href="/" class="link">Index</a>
-            <a href="/projects/" class="link">Projects</a>
-            <a href="/works/" class="link is-active" aria-current="page">Works</a>
-            <a href="/frames/" class="link">Frames</a>
-            <a href="/about/" class="link">About</a>
+            <a href="/" class="link" data-i18n="nav.index">Index</a>
+            <a href="/projects/" class="link" data-i18n="nav.projects">Projects</a>
+            <a href="/works/" class="link is-active" aria-current="page" data-i18n="nav.works">Works</a>
+            <a href="/frames/" class="link" data-i18n="nav.frames">Frames</a>
+            <a href="/about/" class="link" data-i18n="nav.about">About</a>
+            <div class="lang-switch lang-switch--menu" role="group" aria-label="Language">
+              <button type="button" class="link lang-switch__option" data-lang="en" lang="en">EN</button>
+              <button type="button" class="link lang-switch__option" data-lang="ja" lang="ja">日</button>
+            </div>
           </nav>
         </div>
         <div class="left__divider" aria-hidden="true"></div>
@@ -60,8 +71,8 @@
 
     <main class="main main--works">
       <section class="group">
-        <h1 class="strong page-title">Works</h1>
-        <p>Visual crafts and concepts reflecting my design aesthetics and taste.</p>
+        <h1 class="strong page-title" data-i18n="works.title">Works</h1>
+        <p data-i18n="works.desc">Visual crafts and concepts reflecting my design aesthetics and taste.</p>
       </section>
       <img class="work__image" src="/assets/works/1.png" width="1808" height="1360" decoding="async" alt="Visual exploration 1" />
       <img class="work__image" src="/assets/works/2.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 2" />
@@ -109,9 +120,15 @@
       <img class="work__image" src="/assets/works/44.png" width="1808" height="1360" loading="lazy" decoding="async" alt="Visual exploration 44" />
     </main>
 
-    <div class="right" aria-hidden="true"></div>
+    <div class="right">
+      <div class="lang-switch lang-switch--desktop" role="group" aria-label="Language">
+        <button type="button" class="link lang-switch__option" data-lang="en" lang="en">EN</button>
+        <button type="button" class="link lang-switch__option" data-lang="ja" lang="ja">日</button>
+      </div>
+    </div>
   </div>
   <script src="/zoom.js" defer></script>
+  <script src="/i18n.js"></script>
   <script src="/intro.js" defer></script>
   <script src="/nav.js" defer></script>
 </body>
