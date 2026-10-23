@@ -587,6 +587,10 @@ p {
   .main--about .experiences {
     --company-col: 120px;
   }
+
+  .main--about .actions {
+    padding: 12px 0;
+  }
 }
 
 @media (max-width: 1000px) {
