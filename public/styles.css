@@ -747,6 +747,13 @@ html.lang-pending [data-i18n] {
   transition: opacity 200ms ease, color 0.15s ease;
 }
 
+/* While the intro / page-enter animation runs it hides and reveals these itself;
+   a transition here would make them fade out visibly instead of hiding instantly. */
+html.is-intro [data-i18n],
+html.is-enter [data-i18n] {
+  transition: none;
+}
+
 html.is-lang-fading [data-i18n] {
   opacity: 0 !important;
   transition: opacity 200ms ease !important;
