@@ -1,5 +1,6 @@
 // English / Japanese switch. English lives in the HTML; this file holds the Japanese copy.
-// The chosen language is remembered (localStorage) and applied before the page animates in.
+// The chosen language is remembered for the browser session (sessionStorage), so a new visit
+// always starts in English. It is applied before the page animates in.
 (function () {
   var JA = {
     "nav.index": "インデックス",
@@ -57,8 +58,11 @@
   nodes.forEach(function (el) { el._en = el.innerHTML; });
 
   function saved() {
-    try { return localStorage.getItem("lang") === "ja" ? "ja" : "en"; } catch (e) { return "en"; }
+    try { return sessionStorage.getItem("lang") === "ja" ? "ja" : "en"; } catch (e) { return "en"; }
   }
+
+  // Older versions kept the choice forever in localStorage; clear it so English is the default again.
+  try { localStorage.removeItem("lang"); } catch (e) {}
 
   function apply(lang) {
     nodes.forEach(function (el) {
@@ -81,7 +85,7 @@
   function switchTo(lang) {
     if (lang === current) return;
     current = lang;
-    try { localStorage.setItem("lang", lang); } catch (e) {}
+    try { sessionStorage.setItem("lang", lang); } catch (e) {}
     if (reduceMotion.matches) {
       apply(lang);
       return;

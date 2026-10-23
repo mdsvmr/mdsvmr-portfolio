@@ -9,9 +9,10 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/styles.css" />
   <script>
-    // Saved language: keep translatable text hidden until i18n.js has applied it (no flash of English).
+    // Language chosen in this browser session (English is the default on every new visit):
+    // keep translatable text hidden until i18n.js has applied it (no flash of English).
     try {
-      if (localStorage.getItem("lang") === "ja") {
+      if (sessionStorage.getItem("lang") === "ja") {
         document.documentElement.lang = "ja";
         document.documentElement.classList.add("lang-pending");
       }
