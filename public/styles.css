@@ -228,7 +228,7 @@ p {
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 9px;
+  gap: 8px;
   padding: 8px 0;
 }
 
@@ -236,8 +236,8 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
-  padding: 0 20px;
+  height: 36px;
+  padding: 0 16px;
   border-radius: 40px;
   font-size: 14px;
   line-height: 1.4;
@@ -327,7 +327,7 @@ p {
 .lang-switch {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   font-size: 14px;
   line-height: 1.5;
   white-space: nowrap;
@@ -506,6 +506,7 @@ p {
 
   .menu .lang-switch--menu {
     display: flex;
+    gap: 12px;
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
