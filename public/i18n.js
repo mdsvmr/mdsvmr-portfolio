@@ -9,7 +9,7 @@
     "nav.frames": "フレーム",
     "nav.about": "プロフィール",
 
-    "index.bio": "AIネイティブな経験を持つプロダクトデザイナー。企業の大胆なアイデンティティと直感的なデジタルプロダクトづくりを支援しています。",
+    "index.bio": "ピクセルを丁寧につくり込み、AIとともにプロダクトを届けるプロダクトデザイナー。ブランドのための大胆なアイデンティティと直感的なデジタルプロダクトを手がけています。",
     "index.current": "現在",
     "index.currentProject": '<a href="https://www.shopra.ai/" class="link" target="_blank" rel="noopener">Shopra</a> をデザイン中',
     "index.currentDesc": "サプライと小売のデータを一つのインテリジェンスレイヤーに統合し、チームがより速く動き、より賢く成長できるようにします。",
