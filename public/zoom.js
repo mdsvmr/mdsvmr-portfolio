@@ -55,6 +55,10 @@
     var srcVideo = sourceVideo(source);
     var video = sourceVideo(clone);
     if (srcVideo && video) {
+      // Lazy-loaded videos (media.js) may not have their source attached yet.
+      if (!video.getAttribute("src") && video.getAttribute("data-src")) {
+        video.src = video.getAttribute("data-src");
+      }
       video.muted = true;
       video.preload = "auto";
       clone._syncTime = srcVideo.currentTime;
