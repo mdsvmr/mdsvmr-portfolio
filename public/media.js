@@ -8,6 +8,7 @@
   var videos = Array.prototype.slice.call(document.querySelectorAll("video[data-src]"));
   if (!videos.length) return;
 
+  var EAGER_COUNT = 2; // how many of the top videos load immediately
   var nearScreen = new Set();
   var retryArmed = false;
 
@@ -60,12 +61,12 @@
         if (!video.paused) video.pause();
       }
     });
-  }, { rootMargin: "200px 0px" }); // start a little before the video scrolls into view
+  }, { rootMargin: "100px 0px" }); // start just before the video scrolls into view
 
-  videos.forEach(function (video) {
-    // Videos already near the screen start right away instead of waiting for the observer.
-    var r = video.getBoundingClientRect();
-    if (r.top < window.innerHeight + 200 && r.bottom > -200) {
+  videos.forEach(function (video, i) {
+    // The first videos on the page (newest work sits on top) start right away;
+    // the rest wait until they are scrolled near.
+    if (i < EAGER_COUNT) {
       nearScreen.add(video);
       play(video);
     }
