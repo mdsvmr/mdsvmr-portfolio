@@ -32,7 +32,7 @@ body {
   font-family: "Helvetica Now Display", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", "Meiryo", system-ui, -apple-system, sans-serif;
   font-size: 16px;
   line-height: 1.5;
-  letter-spacing: 0.02em; /* 2% */
+  letter-spacing: 0.015em; /* 1.5% */
   -webkit-font-smoothing: antialiased;
 }
 
