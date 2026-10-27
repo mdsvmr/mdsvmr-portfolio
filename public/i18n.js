@@ -16,10 +16,10 @@
     "index.past": "これまで",
     "index.pastList": '<a href="https://www.ezpairs.xyz/" class="link" target="_blank" rel="noopener">Ezpairs</a>、<a href="https://www.dipainhouse.com/" class="link" target="_blank" rel="noopener">Dipa Inhouse</a>、<a href="https://skilvul.com/" class="link" target="_blank" rel="noopener">Skilvul</a>、<a href="https://slabdsgn.com/" class="link" target="_blank" rel="noopener">Slab</a> など。',
     "index.built": "最近つくったもの",
-    "index.cap1": "ライブ折れ線チャート",
+    "index.cap1": "ライブ折れ線チャート（1時間）",
     "index.cap3": "ジェネレーティブASCIIチャート",
     "index.cap4": "料金プランセレクター",
-    "index.cap5": "ウォレット選択シート",
+    "index.cap5": "ウォレット接続モーダル",
 
     "projects.title": "プロジェクト",
     "projects.desc": "ゼロから構築したクライアントワーク。複雑なアイデアを実際に動くプロダクトへ。",
