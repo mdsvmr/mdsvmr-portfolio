@@ -301,9 +301,13 @@ p {
   gap: 16px;
 }
 
-.project__title,
-.project__case {
+.project__title {
   align-self: flex-start;
+}
+
+.project__case {
+  align-self: center;
+  font-size: 14px;
 }
 
 .project__image {
@@ -570,6 +574,10 @@ p {
   /* Projects */
   .project {
     gap: 12px;
+  }
+
+  .project__case {
+    font-size: 12px;
   }
 
   /* Moments: one column, left column first then right */
