@@ -37,10 +37,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* -2% tracking, relative to each element's own font size */
+/* -3% tracking, relative to each element's own font size */
 body,
 body * {
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 p {
