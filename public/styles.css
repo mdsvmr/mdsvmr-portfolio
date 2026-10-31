@@ -10,6 +10,7 @@
   --text-primary: #101d2f;
   --border: #e9f0f6;
   --text-secondary: #6c7c93;
+  --text-muted: #a7b0be;
   --surface-muted: #edeff2;
   --bg: #ffffff;
 }
@@ -314,6 +315,10 @@ p {
 .project__case {
   align-self: center;
   font-size: 14px;
+}
+
+.project__case--locked {
+  color: var(--text-muted);
 }
 
 .project__image {

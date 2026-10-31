@@ -25,6 +25,7 @@
     "projects.desc": "ゼロから構築したクライアントワーク。複雑なアイデアを実際に動くプロダクトへ。",
     "projects.ezpairs": "分散型の暗号資産ペアトレーディングプラットフォーム。",
     "projects.caseStudy": "ケーススタディを見る",
+    "projects.caseLocked": "ケーススタディ（非公開）",
     "projects.shopra": "飲料ブランド向けのAIデータインテリジェンスプラットフォーム。",
 
     "works.title": "作品",
