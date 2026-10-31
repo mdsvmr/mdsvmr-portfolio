@@ -9,8 +9,9 @@
 :root {
   --text-primary: #101d2f;
   --border: #e9f0f6;
-  --text-secondary: #6c7c93;
+  --text-secondary: #66758a;
   --text-muted: #a7b0be;
+  --text-inactive: #818ea2;
   --surface-muted: #edeff2;
   --bg: #ffffff;
 }
@@ -85,6 +86,7 @@ p {
   align-items: flex-start;
   gap: 8px;
   font-size: 14px;
+  color: var(--text-inactive);
 }
 
 /* Dotted underline links */
@@ -355,7 +357,7 @@ p {
   border: 0;
   background: none;
   font: inherit;
-  color: var(--text-secondary);
+  color: var(--text-inactive);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
