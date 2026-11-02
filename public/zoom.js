@@ -1,6 +1,8 @@
 // Click-to-zoom for images and videos.
 // The clicked media is cloned at its final (centered) size and animated from its
 // on-page position with a FLIP transform, so it stays crisp once open.
+// While zoomed, the left/right half of the media (or the arrow keys) steps to the
+// previous/next media on the page, looping at either end.
 (function () {
   var SELECTOR = ".showcase, .work__image, .moments__image";
   var MAX_HEIGHT = 600;
@@ -8,6 +10,8 @@
   var CLOSE_MS = 440;
   var EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  var SWAP_MS = 220;
 
   var state = null; // { source, clone, overlay, closing }
 
@@ -68,9 +72,16 @@
 
   // Seek the cloned video to the source's time and wait (briefly) for that frame,
   // so the zoomed video continues exactly where it was and never flashes empty.
+  // Images wait (briefly) to be decoded, so a not-yet-loaded one never shows up blank.
   function ready(clone) {
     var video = sourceVideo(clone);
-    if (!video) return Promise.resolve();
+    if (!video) {
+      if (clone.tagName !== "IMG" || !clone.decode) return Promise.resolve();
+      return Promise.race([
+        clone.decode().catch(function () {}),
+        new Promise(function (resolve) { setTimeout(resolve, 600); })
+      ]);
+    }
     return new Promise(function (resolve) {
       var finished = false;
       var done = function () {
@@ -89,6 +100,68 @@
     });
   }
 
+  function items() {
+    return Array.prototype.slice.call(document.querySelectorAll(SELECTOR)).filter(function (el) {
+      return !el.classList.contains("zoom-media");
+    });
+  }
+
+  // Which half of the zoomed media the pointer is over: -1 left (previous), 1 right (next).
+  function side(clone, clientX) {
+    var r = clone.getBoundingClientRect();
+    return clientX < r.left + r.width / 2 ? -1 : 1;
+  }
+
+  function trackSide(clone) {
+    clone.addEventListener("mousemove", function (e) {
+      var dir = side(clone, e.clientX);
+      clone.classList.toggle("is-prev", dir < 0);
+      clone.classList.toggle("is-next", dir > 0);
+    });
+  }
+
+  // Swap the zoomed media for the previous (-1) or next (1) one, cross-fading in place.
+  function step(dir) {
+    if (!state || state.closing) return;
+    var list = items();
+    if (list.length < 2) return;
+    var index = list.indexOf(state.source);
+    var next = list[(index + dir + list.length) % list.length];
+    var s = state;
+    var old = s.clone;
+
+    // Bring the new source into view behind the overlay, so closing flies back to it.
+    next.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+    var r = next.getBoundingClientRect();
+    var clone = prepareClone(next, targetRect(r.width / r.height));
+    if (old.classList.contains("is-prev")) clone.classList.add("is-prev");
+    if (old.classList.contains("is-next")) clone.classList.add("is-next");
+    trackSide(clone);
+    clone.style.opacity = "0";
+    document.body.appendChild(clone);
+
+    s.source.style.visibility = "";
+    next.style.visibility = "hidden";
+    s.source = next;
+    s.clone = clone;
+
+    var oldVideo = sourceVideo(old);
+    if (oldVideo) oldVideo.pause();
+
+    ready(clone).then(function () {
+      if (state !== s || s.clone !== clone) {
+        clone.remove();
+        return;
+      }
+      var duration = reduceMotion.matches ? 1 : SWAP_MS;
+      old.getAnimations().forEach(function (a) { a.cancel(); });
+      old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: duration, easing: "ease-out", fill: "forwards" });
+      clone.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duration, easing: "ease-out", fill: "forwards" });
+      clone.style.opacity = "";
+      setTimeout(function () { old.remove(); }, duration + 50);
+    });
+  }
+
   function open(source) {
     if (state) return;
     var from = source.getBoundingClientRect();
@@ -98,6 +171,7 @@
     overlay.className = "zoom-overlay";
     var clone = prepareClone(source, to);
     clone.style.transform = invert(from, to);
+    trackSide(clone);
     overlay.style.opacity = "0";
 
     document.body.appendChild(overlay);
@@ -164,7 +238,7 @@
       if (cleaned) return;
       cleaned = true;
       s.source.style.visibility = "";
-      s.clone.remove();
+      document.querySelectorAll(".zoom-media").forEach(function (el) { el.remove(); });
       s.overlay.remove();
       document.documentElement.classList.remove("is-zoomed");
       if (state === s) state = null;
@@ -188,16 +262,25 @@
     });
   });
 
-  // Close by clicking anywhere outside the zoomed media, or with Escape.
+  // Click the left/right half of the zoomed media to step; anywhere outside closes.
   document.addEventListener("click", function (e) {
     if (!state) return;
-    if (e.target.closest(".zoom-media")) return;
+    var media = e.target.closest(".zoom-media");
+    if (media) {
+      if (media === state.clone) step(side(media, e.clientX));
+      return;
+    }
     if (e.target.closest(SELECTOR)) return;
     close();
   });
 
   document.addEventListener("keydown", function (e) {
+    if (!state) return;
     if (e.key === "Escape") close();
+    else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      step(e.key === "ArrowLeft" ? -1 : 1);
+    }
   });
 
   // Keep the page still while zoomed.

@@ -733,6 +733,15 @@ p {
   cursor: default;
 }
 
+/* Left half steps back, right half steps forward */
+.zoom-media.is-prev {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M24 16H8m6-6-6 6 6 6' stroke='%23fff' stroke-width='5'/%3E%3Cpath d='M24 16H8m6-6-6 6 6 6' stroke='%23101d2f' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E") 16 16, w-resize;
+}
+
+.zoom-media.is-next {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 16h16m-6-6 6 6-6 6' stroke='%23fff' stroke-width='5'/%3E%3Cpath d='M8 16h16m-6-6 6 6-6 6' stroke='%23101d2f' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E") 16 16, e-resize;
+}
+
 /* Intro: centered logo placeholder until intro.js takes over */
 html.is-intro:not(.is-intro-ready) .main,
 html.is-intro:not(.is-intro-ready) .menu,
