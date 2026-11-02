@@ -25,7 +25,7 @@
 
   // Main blocks in reading order. Wrappers are expanded so each block appears on its own:
   // the Index/About intro into its paragraphs, the Index "built" list into its title and
-  // videos, the Moments grid into its photos.
+  // videos, the Works and Moments grids into their images.
   function mainItems() {
     var items = [];
     Array.prototype.forEach.call(main.children, function (el) {
@@ -34,6 +34,8 @@
       } else if (el.classList.contains("built")) {
         items.push(el.querySelector(".page-title"));
         items.push.apply(items, el.querySelectorAll(".built__item"));
+      } else if (el.classList.contains("works")) {
+        items.push.apply(items, el.children);
       } else if (el.classList.contains("moments")) {
         var photos = Array.prototype.slice.call(el.querySelectorAll(".moments__image"));
         photos.sort(function (a, b) {
