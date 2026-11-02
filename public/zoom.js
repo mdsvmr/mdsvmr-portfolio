@@ -11,6 +11,11 @@
   var EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
+  // Arrow cursors follow the OS look: white with a black edge on Windows,
+  // dark with a white edge elsewhere (as on macOS).
+  var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent;
+  if (/windows|win32|win64/i.test(platform)) document.documentElement.classList.add("is-windows");
+
   var SWAP_MS = 220;
 
   var state = null; // { source, clone, overlay, closing }
@@ -164,6 +169,8 @@
 
   function open(source) {
     if (state) return;
+    // Hide the page scrollbar first, so both rects are measured in the final layout.
+    document.documentElement.classList.add("is-zoomed");
     var from = source.getBoundingClientRect();
     var to = targetRect(from.width / from.height);
 
@@ -176,7 +183,6 @@
 
     document.body.appendChild(overlay);
     document.body.appendChild(clone);
-    document.documentElement.classList.add("is-zoomed");
 
     state = { source: source, clone: clone, overlay: overlay, closing: false };
 
@@ -203,6 +209,8 @@
     if (!state || state.closing) return;
     state.closing = true;
     var s = state;
+    // Bring the scrollbar back before measuring where the media returns to.
+    document.documentElement.classList.remove("is-zoomed");
 
     var current = s.clone.getBoundingClientRect();
     var base = {
@@ -240,7 +248,6 @@
       s.source.style.visibility = "";
       document.querySelectorAll(".zoom-media").forEach(function (el) { el.remove(); });
       s.overlay.remove();
-      document.documentElement.classList.remove("is-zoomed");
       if (state === s) state = null;
       if (s.source.focus) s.source.focus({ preventScroll: true });
     };
