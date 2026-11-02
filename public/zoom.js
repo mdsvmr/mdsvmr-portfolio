@@ -11,11 +11,6 @@
   var EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  // Arrow cursors follow the OS look: white with a black edge on Windows,
-  // dark with a white edge elsewhere (as on macOS).
-  var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent;
-  if (/windows|win32|win64/i.test(platform)) document.documentElement.classList.add("is-windows");
-
   var SWAP_MS = 220;
 
   var state = null; // { source, clone, overlay, closing }
