@@ -604,14 +604,6 @@ p {
     font-size: 12px;
   }
 
-  /* Moments: one column, left column first then right */
-  .moments,
-  .moments__col {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 24px;
-  }
-
   /* About */
   .main--about .intro {
     gap: 16px;
