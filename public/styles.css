@@ -103,6 +103,11 @@ p {
   color: var(--text-primary);
 }
 
+/* Current page / chosen language: solid underline */
+.link.is-active {
+  text-decoration-style: solid;
+}
+
 /* Main column */
 .main {
   flex: 0 1 560px;
