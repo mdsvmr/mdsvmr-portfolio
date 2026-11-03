@@ -15,17 +15,19 @@
 
   var state = null; // { source, clone, overlay, closing }
 
-  // Space kept around the zoomed media. On the mobile layout it goes edge to edge.
+  // Space kept around the zoomed media. On the mobile layout it goes edge to edge;
+  // from 1440px wide it fills the screen height with 80px above and below (no height cap).
   function gutter() {
-    var mobile = window.matchMedia("(max-width: 1000px)").matches;
-    return mobile ? { x: 0, y: 16 } : { x: 40, y: 40 };
+    if (window.matchMedia("(max-width: 1000px)").matches) return { x: 0, y: 16, max: MAX_HEIGHT };
+    if (window.matchMedia("(min-width: 1440px)").matches) return { x: 40, y: 80, max: Infinity };
+    return { x: 40, y: 40, max: MAX_HEIGHT };
   }
 
   function targetRect(aspect) {
     var g = gutter();
     var vw = document.documentElement.clientWidth;
     var vh = window.innerHeight;
-    var h = Math.min(MAX_HEIGHT, vh - g.y * 2);
+    var h = Math.min(g.max, vh - g.y * 2);
     var w = h * aspect;
     if (w > vw - g.x * 2) {
       w = vw - g.x * 2;
