@@ -12,7 +12,7 @@
   --text-secondary: #6c7684;
   --text-muted: #b0b7bf;
   --text-inactive: #86909c;
-  --surface-muted: #edeff2;
+  --surface-muted: #f4f5f6;
   --bg: #ffffff;
 }
 
@@ -41,6 +41,13 @@ body {
 body,
 body * {
   letter-spacing: -0.02em;
+}
+
+/* Text selection block (mouse devices only; touchscreens keep the OS selection) */
+@media (hover: hover) and (pointer: fine) {
+  ::selection {
+    background: #ebedef;
+  }
 }
 
 p {
