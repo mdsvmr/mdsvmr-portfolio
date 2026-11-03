@@ -89,12 +89,17 @@ p {
   color: var(--text-inactive);
 }
 
-/* Dotted underline links */
+/* Dotted underline links. The dots are a background (1px dot, 1px gap) so the
+   spacing rounds to fit the word and the row always ends on a whole dot. */
 .link {
   color: inherit;
-  text-decoration: underline dotted;
-  text-decoration-skip-ink: none;
-  text-underline-position: from-font;
+  text-decoration: none;
+  background-image: linear-gradient(to right, currentColor 50%, transparent 50%);
+  background-position: 0 100%;
+  background-size: 2px 1px;
+  background-repeat: round no-repeat;
+  -webkit-box-decoration-break: clone; /* a link that wraps rounds its dots per line */
+  box-decoration-break: clone;
   transition: color 0.15s ease;
 }
 
@@ -105,7 +110,9 @@ p {
 
 /* Current page / chosen language: solid underline */
 .link.is-active {
-  text-decoration-style: solid;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
 }
 
 /* Main column */
@@ -367,7 +374,7 @@ p {
   margin: 0;
   padding: 0;
   border: 0;
-  background: none;
+  background-color: transparent;
   font: inherit;
   color: var(--text-inactive);
   cursor: pointer;
