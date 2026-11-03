@@ -37,10 +37,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* -3% tracking, relative to each element's own font size */
+/* -2% tracking, relative to each element's own font size */
 body,
 body * {
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
 p {
@@ -175,6 +175,7 @@ p {
   font-size: 14px;
   line-height: 1.5;
   text-align: center;
+  color: var(--text-inactive);
 }
 
 .page-title {
@@ -356,7 +357,7 @@ p {
 .lang-switch {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   font-size: 14px;
   line-height: 1.5;
   white-space: nowrap;
@@ -396,6 +397,93 @@ p {
     top: 80px;
     right: 80px;
     z-index: 1;
+  }
+
+  /* Sidebar and language switch (Figma: Index desktop) */
+  .left__content {
+    padding-top: 78px;
+  }
+
+  .menu {
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .lang-switch {
+    font-size: 13px;
+  }
+
+  /* Index */
+  .main--index {
+    font-size: 14px;
+  }
+
+  .main--index .group {
+    gap: 6px;
+  }
+
+  .built__item {
+    gap: 10px;
+  }
+
+  .built__caption {
+    font-size: 13px;
+  }
+
+  /* Projects, Works and Frames */
+  .main--projects,
+  .main--works,
+  .main--moments {
+    font-size: 14px;
+  }
+
+  .main--projects .group,
+  .main--works .group,
+  .main--moments .group {
+    gap: 6px;
+  }
+
+  .project + .project {
+    margin-top: -8px; /* 40px main gap - 8px = 32px */
+  }
+
+  .project__case {
+    margin-top: -6px; /* 16px project gap - 6px = 10px under the video */
+    font-size: 13px;
+  }
+
+  /* About */
+  .main--about {
+    gap: 32px;
+    font-size: 14px;
+  }
+
+  .main--about .group {
+    gap: 6px;
+  }
+
+  .main--about .experiences {
+    --company-col: 160px;
+    gap: 10px;
+  }
+
+  .main--about .experience + .experience {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .experience__year {
+    color: var(--text-inactive);
+  }
+
+  .main--about .actions {
+    padding: 6px 0;
+  }
+
+  .button {
+    height: 32px;
+    padding: 0 14px;
+    font-size: 13px;
   }
 }
 
