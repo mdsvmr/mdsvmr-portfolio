@@ -85,7 +85,7 @@ p {
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-inactive);
 }
 
@@ -251,17 +251,17 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 36px;
-  padding: 0 16px;
+  height: 32px;
+  padding: 0 14px;
   border-radius: 40px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
   text-decoration: none;
   white-space: nowrap;
@@ -365,7 +365,7 @@ p {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
   white-space: nowrap;
 }
@@ -413,11 +413,6 @@ p {
 
   .menu {
     gap: 6px;
-    font-size: 13px;
-  }
-
-  .lang-switch {
-    font-size: 13px;
   }
 
   /* Index */
@@ -481,16 +476,6 @@ p {
 
   .experience__year {
     color: var(--text-inactive);
-  }
-
-  .main--about .actions {
-    padding: 6px 0;
-  }
-
-  .button {
-    height: 32px;
-    padding: 0 14px;
-    font-size: 13px;
   }
 }
 
@@ -630,7 +615,7 @@ p {
 
   .menu .lang-switch--menu {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
@@ -678,7 +663,7 @@ p {
   }
 
   .built__item {
-    gap: 12px;
+    gap: 10px;
   }
 
   .built__caption {
@@ -696,6 +681,7 @@ p {
   }
 
   .project__case {
+    margin-top: -2px; /* 12px project gap - 2px = 10px under the video */
     font-size: 12px;
   }
 
@@ -709,7 +695,7 @@ p {
   .moments__col {
     flex-direction: column;
     align-items: stretch;
-    gap: 20px;
+    gap: 24px;
   }
 
   /* About */
@@ -725,10 +711,6 @@ p {
   .main--about .experience + .experience {
     margin-top: 10px;
     padding-top: 10px;
-  }
-
-  .main--about .actions {
-    padding: 12px 0;
   }
 }
 
