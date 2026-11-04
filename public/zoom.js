@@ -14,7 +14,11 @@
 
   var SWAP_MS = 220;
 
-  var state = null; // { source, clone, overlay, closing }
+  var state = null; // { source, clone, overlay, caption, closing }
+
+  // Desktop demos show a short hint 16px under the zoomed media (Figma 1059:1111)
+  var CAPTION_GAP = 16;
+  var CAPTION_SPACE = 52; // gap + one 13px line + breathing room, kept clear below the media
 
   // Space kept around the zoomed media. On the mobile layout it goes edge to edge;
   // from 1440px wide it fills the screen height with 80px above and below (no height cap).
@@ -24,17 +28,31 @@
     return { x: 40, y: 40, max: MAX_HEIGHT };
   }
 
-  function targetRect(aspect) {
+  // withCaption: keep room under the media for the hint (only needed where the gutter is
+  // smaller than that room; the media then sits that much higher).
+  function targetRect(aspect, withCaption) {
     var g = gutter();
     var vw = document.documentElement.clientWidth;
     var vh = window.innerHeight;
-    var h = Math.min(g.max, vh - g.y * 2);
+    var reserve = withCaption ? Math.max(0, CAPTION_SPACE - g.y) : 0;
+    var h = Math.min(g.max, vh - g.y * 2 - reserve);
     var w = h * aspect;
     if (w > vw - g.x * 2) {
       w = vw - g.x * 2;
       h = w / aspect;
     }
-    return { left: (vw - w) / 2, top: (vh - h) / 2, width: w, height: h };
+    return { left: (vw - w) / 2, top: (vh - h - reserve) / 2, width: w, height: h };
+  }
+
+  // The hint for a demo (a hidden .zoom-hint next to it, translated with the page)
+  function zoomHint(source) {
+    var figure = source.closest("figure");
+    var hint = figure && figure.querySelector(".zoom-hint");
+    return hint && demosUsable() ? hint.textContent.trim() : "";
+  }
+
+  function placeCaption(caption, rect) {
+    caption.style.top = rect.top + rect.height + CAPTION_GAP + "px";
   }
 
   function invert(from, to) {
@@ -203,6 +221,10 @@
     next.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
     var r = next.getBoundingClientRect();
     var clone = prepareClone(next, targetRect(r.width / r.height));
+    if (s.caption) {
+      s.caption.remove();
+      s.caption = null;
+    }
     if (old.classList.contains("is-prev")) clone.classList.add("is-prev");
     if (old.classList.contains("is-next")) clone.classList.add("is-next");
     trackSide(clone);
@@ -236,7 +258,8 @@
     // Hide the page scrollbar first, so both rects are measured in the final layout.
     document.documentElement.classList.add("is-zoomed");
     var from = source.getBoundingClientRect();
-    var to = targetRect(from.width / from.height);
+    var hint = zoomHint(source);
+    var to = targetRect(from.width / from.height, Boolean(hint));
 
     var overlay = document.createElement("div");
     overlay.className = "zoom-overlay";
@@ -248,7 +271,17 @@
     document.body.appendChild(overlay);
     document.body.appendChild(clone);
 
-    state = { source: source, clone: clone, overlay: overlay, closing: false };
+    var caption = null;
+    if (hint) {
+      caption = document.createElement("p");
+      caption.className = "zoom-caption";
+      caption.textContent = hint;
+      caption.style.opacity = "0";
+      placeCaption(caption, to);
+      document.body.appendChild(caption);
+    }
+
+    state = { source: source, clone: clone, overlay: overlay, caption: caption, closing: false };
 
     ready(clone).then(function () {
       if (!state || state.clone !== clone) return;
@@ -266,6 +299,15 @@
       });
       clone.style.transform = "none";
       overlay.style.opacity = "1";
+      if (caption) {
+        caption.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: reduceMotion.matches ? 200 : OPEN_MS * 0.6,
+          delay: reduceMotion.matches ? 0 : OPEN_MS * 0.4,
+          easing: "ease-out",
+          fill: "backwards"
+        });
+        caption.style.opacity = "";
+      }
     });
   }
 
@@ -305,6 +347,12 @@
       easing: "ease-in-out",
       fill: "forwards"
     });
+    if (s.caption) {
+      s.caption.getAnimations().forEach(function (a) { a.cancel(); });
+      s.caption.animate([{ opacity: getComputedStyle(s.caption).opacity }, { opacity: 0 }], {
+        duration: 150, easing: "ease-out", fill: "forwards"
+      });
+    }
 
     var cleaned = false;
     var cleanup = function () {
@@ -317,6 +365,7 @@
         setTimeout(function () { el.remove(); }, 250);
       });
       s.overlay.remove();
+      if (s.caption) s.caption.remove();
       if (state === s) state = null;
       if (s.source.focus) s.source.focus({ preventScroll: true });
     };
@@ -371,11 +420,12 @@
   window.addEventListener("resize", function () {
     if (!state || state.closing) return;
     var r = state.source.getBoundingClientRect();
-    var to = targetRect(r.width / r.height);
+    var to = targetRect(r.width / r.height, Boolean(state.caption));
     var c = state.clone.style;
     c.left = to.left + "px";
     c.top = to.top + "px";
     c.width = to.width + "px";
     c.height = to.height + "px";
+    if (state.caption) placeCaption(state.caption, to);
   });
 })();

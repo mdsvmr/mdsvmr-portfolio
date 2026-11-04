@@ -179,6 +179,21 @@ p {
   pointer-events: auto;
 }
 
+/* Desktop: a short hint 16px under a zoomed demo (zoom.js places it) */
+.zoom-caption {
+  position: fixed;
+  z-index: 101;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0 40px;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
 /* Mobile: a zoomed demo is only shown larger, not used */
 .zoom-media.is-preview iframe {
   pointer-events: none;
