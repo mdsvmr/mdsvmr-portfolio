@@ -1090,16 +1090,20 @@
     function playSuccessFx(success, { still = false } = {}) {
       const canvas = success.querySelector(".success__fx");
       const icon = success.querySelector(".success__icon").getBoundingClientRect();
-      const box = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      // Draw in the card's own (layout) px so the dots shrink with the embed's scale;
+      // the bitmap still matches the on-screen size, so it stays sharp.
+      const k = rect.width / canvas.offsetWidth || 1;
+      const box = { width: canvas.offsetWidth, height: canvas.offsetHeight };
+      const dpr = (window.devicePixelRatio || 1) * k;
       canvas.width = Math.round(box.width * dpr);
       canvas.height = Math.round(box.height * dpr);
       const ctx = canvas.getContext("2d");
       ctx.scale(dpr, dpr);
 
       const GAP = 4, DOT = 1, LIT = 1.6; // LIT = size of a glowing dot
-      const cx = icon.left - box.left + icon.width / 2;
-      const cy = icon.top - box.top + icon.height / 2;
+      const cx = (icon.left - rect.left + icon.width / 2) / k;
+      const cy = (icon.top - rect.top + icon.height / 2) / k;
       const dots = [];
       const grid = []; // grid[row][col] -> dot, for picking neighbours
       // Afterglow: some dots keep glowing after a ring passes, so rings dissolve
