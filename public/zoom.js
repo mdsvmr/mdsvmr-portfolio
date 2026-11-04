@@ -52,6 +52,11 @@
     return el.querySelector("iframe");
   }
 
+  // On the mobile layout a zoomed demo is just shown larger (its on-page preview, not usable)
+  function demosUsable() {
+    return !window.matchMedia("(max-width: 1000px)").matches;
+  }
+
   function prepareClone(source, rect) {
     var clone = source.cloneNode(true);
     clone.removeAttribute("loading");
@@ -62,8 +67,13 @@
     if (frame) {
       frame.removeAttribute("loading");
       frame.removeAttribute("tabindex");
-      // The page shows the demo's preview mode; zoomed in it opens its own version
-      if (frame.dataset.zoomSrc) frame.src = frame.dataset.zoomSrc;
+      // The page shows the demo's preview mode; zoomed in on desktop it opens its own,
+      // usable version, on mobile the same preview stays (bigger) and can't be used
+      if (demosUsable()) {
+        if (frame.dataset.zoomSrc) frame.src = frame.dataset.zoomSrc;
+      } else {
+        clone.classList.add("is-preview");
+      }
     }
     clone.style.left = rect.left + "px";
     clone.style.top = rect.top + "px";
@@ -333,7 +343,7 @@
     if (!state) return;
     var media = e.target.closest(".zoom-media");
     if (media) {
-      if (media === state.clone) step(side(media, e.clientX));
+      if (media === state.clone && !demoFrame(media)) step(side(media, e.clientX));
       return;
     }
     if (e.target.closest(SELECTOR)) return;

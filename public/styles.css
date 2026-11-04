@@ -179,6 +179,11 @@ p {
   pointer-events: auto;
 }
 
+/* Mobile: a zoomed demo is only shown larger, not used */
+.zoom-media.is-preview iframe {
+  pointer-events: none;
+}
+
 /* Index: "Something i built recently" — each video with a caption under it */
 .built {
   display: flex;
