@@ -1,8 +1,9 @@
-// Click-to-zoom for images and videos.
+// Click-to-zoom for images, videos and live demos (an iframe inside .showcase).
 // The clicked media is cloned at its final (centered) size and animated from its
 // on-page position with a FLIP transform, so it stays crisp once open.
 // While zoomed, the left/right half of the media (or the arrow keys) steps to the
-// previous/next media on the page, looping at either end.
+// previous/next media on the page, looping at either end. A zoomed live demo can be
+// used instead (its clicks stay inside it), so only the arrow keys step past it.
 (function () {
   var SELECTOR = ".showcase, .work__image, .moments__image";
   var MAX_HEIGHT = 600;
@@ -47,12 +48,23 @@
     return el.tagName === "VIDEO" ? el : el.querySelector("video");
   }
 
+  function demoFrame(el) {
+    return el.querySelector("iframe");
+  }
+
   function prepareClone(source, rect) {
     var clone = source.cloneNode(true);
     clone.removeAttribute("loading");
     clone.removeAttribute("tabindex");
     clone.removeAttribute("role");
     clone.classList.add("zoom-media");
+    var frame = demoFrame(clone);
+    if (frame) {
+      frame.removeAttribute("loading");
+      frame.removeAttribute("tabindex");
+      // The page shows the demo's preview mode; zoomed in it opens its own version
+      if (frame.dataset.zoomSrc) frame.src = frame.dataset.zoomSrc;
+    }
     clone.style.left = rect.left + "px";
     clone.style.top = rect.top + "px";
     clone.style.width = rect.width + "px";
@@ -76,6 +88,8 @@
   // so the zoomed video continues exactly where it was and never flashes empty.
   // Images wait (briefly) to be decoded, so a not-yet-loaded one never shows up blank.
   function ready(clone) {
+    var frame = demoFrame(clone);
+    if (frame) return demoReady(frame);
     var video = sourceVideo(clone);
     if (!video) {
       if (clone.tagName !== "IMG" || !clone.decode) return Promise.resolve();
@@ -102,6 +116,22 @@
     });
   }
 
+  // A zoomed demo starts fresh: wait (briefly) for it to load, and pass its arrow and
+  // Escape keys on to the zoom, since key presses inside it never reach this page.
+  function demoReady(frame) {
+    return new Promise(function (resolve) {
+      var finished = false;
+      var done = function () {
+        if (finished) return;
+        finished = true;
+        try { frame.contentDocument.addEventListener("keydown", onKey); } catch (e) {}
+        resolve();
+      };
+      frame.addEventListener("load", done, { once: true });
+      setTimeout(done, 1000);
+    });
+  }
+
   function items() {
     return Array.prototype.slice.call(document.querySelectorAll(SELECTOR)).filter(function (el) {
       return !el.classList.contains("zoom-media");
@@ -115,6 +145,7 @@
   }
 
   function trackSide(clone) {
+    if (demoFrame(clone)) return; // the demo uses its own clicks
     clone.addEventListener("mousemove", function (e) {
       var dir = side(clone, e.clientX);
       clone.classList.toggle("is-prev", dir < 0);
@@ -256,7 +287,7 @@
   document.querySelectorAll(SELECTOR).forEach(function (el) {
     el.setAttribute("role", "button");
     el.setAttribute("tabindex", "0");
-    el.setAttribute("aria-label", (el.getAttribute("alt") || el.querySelector("video")?.getAttribute("aria-label") || "Media") + " — open larger view");
+    el.setAttribute("aria-label", (el.getAttribute("alt") || el.querySelector("video")?.getAttribute("aria-label") || el.querySelector("iframe")?.getAttribute("title") || "Media") + " — open larger view");
     el.addEventListener("click", function () { open(el); });
     el.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") {
@@ -278,14 +309,16 @@
     close();
   });
 
-  document.addEventListener("keydown", function (e) {
+  function onKey(e) {
     if (!state) return;
     if (e.key === "Escape") close();
     else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
       step(e.key === "ArrowLeft" ? -1 : 1);
     }
-  });
+  }
+
+  document.addEventListener("keydown", onKey);
 
   // Keep the page still while zoomed.
   ["wheel", "touchmove"].forEach(function (type) {

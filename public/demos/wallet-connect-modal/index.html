@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ezpairs Portfolio Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stage-bg: #f4f5f6;
+    --bg-app: #182327;
+    --bg-surface: #0f1a1e;
+    --bg-popup: #222c30;
+    --white: #ffffff;
+    --white-48: rgba(255, 255, 255, 0.48);
+    --white-32: rgba(255, 255, 255, 0.32);
+    --white-16: rgba(255, 255, 255, 0.16);
+    --white-08: rgba(255, 255, 255, 0.08);
+    --white-04: rgba(255, 255, 255, 0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--stage-bg);
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* ---------- Stage (Figma frame 298:453, 1440×900) ---------- */
+  .stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+  .phone {
+    position: absolute;
+    left: calc(50% - 0.5px);
+    bottom: calc(60 / 380 * 100vh);  /* 60px below the phone in the 380px-tall Index box */
+    width: 439px;
+    height: 916px;
+    transform: translateX(-50%) scale(var(--s, 1));
+    transform-origin: bottom center;
+  }
+  .phone .layer { position: absolute; display: block; max-width: none; }
+  /* Device frame layers sit above the screen; let taps pass through to the app */
+  .phone > :not(.screen) { pointer-events: none; }
+  /* Every frame layer shares one mask (phone silhouette minus screen), origin at phone x=-5 */
+  .masked {
+    -webkit-mask-image: url("assets/p-buttons-mask.svg");
+    mask-image: url("assets/p-buttons-mask.svg");
+    -webkit-mask-size: 448px 916px;
+    mask-size: 448px 916px;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+  /* Dark backing under the screen so the anti-aliased seam with the bezel never shows the page */
+  .screen-backing {
+    position: absolute; left: 15px; top: 17px; width: 410px; height: 882px;
+    border-radius: 61px; background: var(--bg-app);
+  }
+  .screen {
+    background: var(--bg-app);
+    position: absolute; left: 19px; top: 21px; width: 402px; height: 874px;
+    -webkit-mask: url("assets/p-screen-mask.svg") -1px -1px / 404px 876px no-repeat;
+    mask: url("assets/p-screen-mask.svg") -1px -1px / 404px 876px no-repeat;
+    overflow: hidden;
+  }
+  .antenna { position: absolute; width: 6px; height: 9px; background: rgba(0, 0, 0, 0.1); }
+  .reflection {
+    position: absolute; width: 5px; border-radius: 1px; opacity: 0.7; filter: blur(2px); pointer-events: none;
+    background: linear-gradient(180deg, rgb(49,53,70) 0%, rgb(209,213,247) 2.3576%, rgb(115,118,135) 9.6035%, rgb(61,63,77) 49.154%, rgb(116,120,137) 91.676%, rgb(115,118,135) 95.861%, rgb(209,213,247) 98.209%, rgb(49,53,70) 99.52%);
+    box-shadow: inset 0 0 2px 0 #1f212a;
+    -webkit-mask-image: url("assets/p-buttons-mask.svg"), url("assets/p-volume-mask.svg");
+    mask-image: url("assets/p-buttons-mask.svg"), url("assets/p-volume-mask.svg");
+    -webkit-mask-size: 448px 916px, 432px 904px;
+    mask-size: 448px 916px, 432px 904px;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+
+  /* ---------- App screen (Figma 308:3226) ---------- */
+  /* Laid out at the design's 375pt width, then scaled to the 402pt iPhone 17 Pro screen */
+  .app {
+    position: relative; width: 375px; height: calc(874px * 375 / 402);
+    transform: scale(calc(402 / 375)); transform-origin: top left;
+    background: var(--bg-app);
+    display: flex; flex-direction: column; gap: 4px;
+    color: var(--white);
+    letter-spacing: -0.01em;
+  }
+  .status-bar { position: relative; height: 44px; background: var(--bg-surface); flex-shrink: 0; }
+  .status-bar .time {
+    position: absolute; left: 24px; top: calc(50% + 2px); transform: translateY(-50%);
+    font-size: 16px; line-height: 16px; font-weight: 500; letter-spacing: 0;
+  }
+  .status-bar img { position: absolute; display: block; }
+  /* Battery assets export in #0F172A; the design overrides them to white */
+  .status-bar img.battery { filter: brightness(0) invert(1); }
+
+  .navbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: var(--bg-surface);
+  }
+  .logo { position: relative; width: 90px; height: 32.143px; overflow: hidden; }
+  .logo img { position: absolute; max-width: none; width: 139.42%; height: 390.37%; left: -18.82%; top: -143.06%; }
+
+  .segmented {
+    display: flex; gap: 2px; height: 36px; padding: 4px;
+    background: var(--white-04); border: 1px solid var(--white-08); border-radius: 8px;
+  }
+  .segmented .icon-btn {
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px; border-radius: 6px; height: 100%;
+  }
+  .segmented .icon-btn.active { background: var(--white-16); }
+  .icon-16 { width: 16px; height: 16px; display: block; }
+  .icon-20 { width: 20px; height: 20px; display: block; }
+  /* Icons ship with their default (active or muted) colour baked in; these swap the state */
+  .icon-btn:not(.active) .is-bright, .nav-item:not(.active) .is-bright { opacity: 0.48; }
+  .icon-btn.active .is-muted, .nav-item.active .is-muted { filter: url(#alpha-boost); }
+
+  .summary { display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--bg-surface); }
+  .stat-row { display: flex; gap: 8px; }
+  .stat { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding-right: 16px; }
+  .stat-label { font-size: 12px; line-height: 16px; color: var(--white-48); }
+  .stat-value { font-size: 18px; line-height: 28px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .actions { display: flex; gap: 8px; }
+  .action {
+    flex: 1 0 0; min-width: 0;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px 16px; border-radius: 8px; background: var(--white-08);
+    font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap;
+  }
+
+  .chart-box {
+    position: relative; height: 412px; flex-shrink: 0; overflow: hidden;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 20px;
+    padding: 20px 16px 16px; background: var(--bg-surface);
+  }
+  .chart-header { display: flex; gap: 8px; width: 100%; }
+  .tabs {
+    display: flex; height: 36px; padding: 0 2px;
+    background: var(--white-04); border: 1px solid var(--white-08); border-radius: 8px;
+  }
+  .tabs.grow { flex: 1 0 0; min-width: 0; }
+  .tab {
+    display: flex; align-items: center; justify-content: center; height: 100%;
+    font-size: 14px; line-height: 20px; color: var(--white-32); white-space: nowrap;
+  }
+  .tab.active { color: var(--white); font-weight: 500; }
+  /* Theme toggle, chart tabs and bottom nav are static in this demo */
+  .icon-btn, .tab, .nav-item { cursor: default; pointer-events: none; }
+  .tabs:not(.grow) .tab { padding: 8px 12px; }
+  .tabs.grow .tab { flex: 1 0 0; min-width: 0; padding: 8px; }
+  .tabs.grow .tab.wide { flex: 0 0 72px; }
+
+  .y-axis {
+    position: relative; height: 300px; width: calc(100% + 15px);
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .y-row { display: flex; align-items: center; gap: 8px; }
+  .y-row .line { position: relative; flex: 1 0 0; height: 0; }
+  .y-row .line img { position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; display: block; }
+  .axis-label { width: 40px; font-size: 12px; line-height: 16px; color: var(--white-32); }
+  .y-row .axis-label { text-align: right; }
+
+  .x-axis {
+    position: absolute; right: 64px; bottom: 16px; width: 477px; height: 312px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .x-col { height: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .x-col .line { position: relative; flex: 1 0 0; width: 100%; }
+  .x-col .line img {
+    position: absolute; left: 50%; top: 50%; width: 284px; height: 1px; display: block;
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+  .x-col .axis-label { text-align: center; }
+
+  .menu {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    background: var(--bg-popup); border-top: 1px solid var(--white-08);
+    border-radius: 12px 12px 0 0; overflow: hidden;
+  }
+  .menu-items { display: flex; gap: 8px; padding: 12px 16px 8px; }
+  .nav-item {
+    flex: 1 0 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    font-size: 14px; line-height: 20px; color: var(--white-48);
+  }
+  .nav-item.active { color: var(--white); }
+  .home-indicator { position: relative; height: 34px; }
+  .home-indicator::after {
+    content: ""; position: absolute; left: calc(50% + 0.5px); bottom: 12px; transform: translateX(-50%);
+    width: 134px; height: 5px; border-radius: 100px; background: var(--white);
+  }
+
+  /* ---------- Deposit pop up (Figma 303:3878) ---------- */
+  :root {
+    --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);   /* iOS sheet curve */
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --white-56: rgba(255, 255, 255, 0.56);
+    --overlay: rgba(15, 26, 30, 0.8);
+  }
+  .deposit { position: absolute; inset: 0; z-index: 10; visibility: hidden; }
+  .deposit.is-open, .deposit.is-closing { visibility: visible; }
+  .deposit-overlay {
+    position: absolute; inset: 0; background: var(--overlay);
+    opacity: 0; transition: opacity 0.32s ease;
+  }
+  .deposit.is-open .deposit-overlay { opacity: 1; }
+  .deposit-sheet {
+    position: absolute; left: 12px; bottom: 12px; width: 351px; height: 400px;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 24px;
+    padding: 20px; overflow: hidden;
+    /* Bottom corners concentric with the screen corner: ~54pt screen radius minus the 12pt inset */
+    background: var(--bg-popup); border: 1px solid var(--white-08); border-radius: 32px 32px 42px 42px;
+    transform: translateY(calc(100% + 16px));
+    transition: transform 0.5s var(--ease-sheet);
+    touch-action: none; will-change: transform;
+  }
+  .deposit.is-open .deposit-sheet { transform: translateY(var(--drag, 0px)); }
+  .deposit.is-closing .deposit-sheet { transition-duration: 0.34s; }
+  .deposit-sheet.is-dragging { transition: none; }
+
+  /* Offsets are Figma's minus the sheet's 1px border */
+  .deposit-grabber {
+    position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+    width: 64px; height: 4px; border-radius: 100px; background: rgba(255, 255, 255, 0.06);
+  }
+  .deposit-sheet { cursor: grab; }
+  .deposit-sheet.is-dragging { cursor: grabbing; }
+  .deposit-sheet button { cursor: pointer; }
+  .deposit-grabber, .deposit-close { z-index: 2; }
+  .deposit-close {
+    position: absolute; top: 19px; right: 19px;
+    display: flex; align-items: center; padding: 5px;
+    border-radius: 999px; background: rgba(255, 255, 255, 0.06);
+    transition: transform 0.2s ease;
+  }
+  .deposit-close img { display: block; width: 18px; height: 18px; }
+  .deposit-close:active { transform: scale(0.9); }
+
+  /* Coin orb: the logo sits at the centre of a rotating 3D sphere of coins.
+     Coins behind the sphere's centre stack under the logo, coins in front over it. */
+  .coin-field {
+    position: absolute; inset: 0; pointer-events: none;
+    /* Soften coins drifting up to the sheet edge and down into the copy */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 170px, transparent 205px);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 170px, transparent 205px);
+  }
+  .coin-glow {
+    position: absolute; left: calc(50% + 0.5px); top: calc(50% - 84px);
+    width: 180px; height: 180px; transform: translate(-50%, -50%); border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 100%);
+  }
+  .deposit-logo {
+    position: absolute; z-index: 500; left: calc(50% + 0.5px); top: calc(50% - 84px); width: 48px; height: 42px;  /* = LOGO_LAYER */
+    transform: translate(-50%, -50%); overflow: hidden;
+  }
+  .deposit-logo img { position: absolute; max-width: none; width: 497.33%; height: 570.21%; left: -84.61%; top: -223.62%; }
+  .coin {
+    position: absolute; left: calc(50% + 0.5px - 12px); top: calc(50% - 84px - 12px);
+    width: 24px; height: 24px; opacity: 0;
+  }
+  .coin img { display: block; width: 100%; height: 100%; }
+  .coin img.inset { position: absolute; inset: 1.5%; width: auto; height: auto; }
+
+  .deposit-copy { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; text-align: center; }
+  .deposit-title { font-size: 20px; line-height: 28px; font-weight: 500; }
+  .deposit-text { font-size: 14px; line-height: 20px; color: var(--white-56); }
+  .deposit-actions { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+  .connect-btn {
+    width: 100%; padding: 12px 16px; border-radius: 999px;
+    background: var(--white); color: var(--bg-surface);
+    font-size: 14px; line-height: 20px; font-weight: 500;
+    transition: transform 0.18s ease;
+  }
+  .connect-btn:active { transform: scale(0.97); }
+  .deposit-note { font-size: 12px; line-height: 16px; color: var(--white-48); text-align: center; }
+
+  /* Content choreography, re-run on every open */
+  .deposit.is-animating .deposit-logo { animation: logo-in 0.6s var(--ease-spring) 0.12s both; }
+  .deposit.is-animating .coin-glow { animation: glow-in 0.9s ease-out 0.1s both; }
+  .deposit.is-animating .deposit-copy { animation: rise-in 0.5s var(--ease-sheet) 0.22s both; }
+  .deposit.is-animating .deposit-actions { animation: rise-in 0.5s var(--ease-sheet) 0.3s both; }
+  @keyframes logo-in {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotate(-12deg); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  }
+  @keyframes glow-in {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  @keyframes rise-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .deposit-sheet { transition-duration: 0.01s; }
+    .deposit.is-animating * { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="alpha-boost"><feComponentTransfer><feFuncA type="linear" slope="2.0834"/></feComponentTransfer></filter>
+</svg>
+
+<main class="stage">
+  <div class="phone" id="phone">
+    <div class="screen-backing"></div>
+    <!-- Screen -->
+    <div class="screen">
+      <div class="app">
+        <div>
+          <div class="status-bar">
+            <span class="time">9:41</span>
+            <img src="assets/signal.svg" alt="" style="right:77px;top:calc(50% + 3.5px);transform:translateY(-50%);width:18px;height:10px">
+            <img src="assets/wifi.svg" alt="" style="right:56.73px;top:calc(50% + 2.48px);transform:translateY(-50%);width:15.272px;height:10.965px">
+            <img class="battery" src="assets/battery-frame.svg" alt="" style="right:26px;top:calc(50% + 2.5px);transform:translateY(-50%);width:25px;height:13px">
+            <img class="battery" src="assets/battery-cap.svg" alt="" style="right:24.02px;top:calc(50% + 3px);transform:translateY(-50%);width:1.328px;height:4px">
+            <img class="battery" src="assets/battery-fill.svg" alt="" style="right:28.5px;top:calc(50% + 2.5px);transform:translateY(-50%);width:20.2px;height:8.33px">
+          </div>
+          <header class="navbar">
+            <div class="logo"><img src="assets/logo.png" alt="Ezpairs"></div>
+            <div class="segmented">
+              <button class="icon-btn" tabindex="-1" aria-label="Light mode"><img class="icon-16 is-muted" src="assets/sun.svg" alt=""></button>
+              <button class="icon-btn active" tabindex="-1" aria-label="Dark mode"><img class="icon-16 is-bright" src="assets/moon.svg" alt=""></button>
+            </div>
+          </header>
+        </div>
+
+        <section class="summary">
+          <div class="stat-row">
+            <div class="stat"><span class="stat-label">PnL</span><span class="stat-value">$0</span></div>
+            <div class="stat"><span class="stat-label">Volume</span><span class="stat-value">$0</span></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat"><span class="stat-label">Max Drawdown</span><span class="stat-value">0%</span></div>
+            <div class="stat"><span class="stat-label">Total Equity</span><span class="stat-value">$0</span></div>
+          </div>
+          <div class="actions">
+            <button class="action" id="deposit-btn" data-title="Deposit" data-text="Please connect your wallet to make a deposit."><img class="icon-16" src="assets/plus.svg" alt="">Deposit</button>
+            <button class="action" data-title="Withdraw" data-text="Please connect your wallet to make a withdrawal."><img class="icon-16" src="assets/arrow-down.svg" alt="">Withdraw</button>
+            <button class="action" data-title="Send" data-text="Please connect your wallet to send funds."><img class="icon-16" src="assets/send.svg" alt="">Send</button>
+          </div>
+        </section>
+
+        <section class="chart-box">
+          <div class="chart-header">
+            <div class="tabs">
+              <button class="tab active" tabindex="-1">Value</button>
+              <button class="tab" tabindex="-1">PnL</button>
+            </div>
+            <div class="tabs grow">
+              <button class="tab active" tabindex="-1">24h</button>
+              <button class="tab" tabindex="-1">7D</button>
+              <button class="tab" tabindex="-1">30D</button>
+              <button class="tab wide" tabindex="-1">all time</button>
+            </div>
+          </div>
+          <div class="y-axis" id="y-axis"></div>
+          <div class="x-axis" id="x-axis"></div>
+        </section>
+
+        <nav class="menu">
+          <div class="menu-items">
+            <button class="nav-item active" tabindex="-1"><img class="icon-20 is-bright" src="assets/briefcase.svg" alt="">Portfolio</button>
+            <button class="nav-item" tabindex="-1"><img class="icon-20 is-muted" src="assets/switch.svg" alt="">Trade</button>
+            <button class="nav-item" tabindex="-1"><img class="icon-20 is-muted" src="assets/chart.svg" alt="">Stats</button>
+            <button class="nav-item" tabindex="-1"><img class="icon-20 is-muted" src="assets/user.svg" alt="">Account</button>
+          </div>
+          <div class="home-indicator"></div>
+        </nav>
+
+        <div class="deposit" id="deposit" aria-hidden="true">
+          <div class="deposit-overlay" data-close></div>
+          <div class="deposit-sheet" role="dialog" aria-modal="true" aria-labelledby="deposit-title">
+            <div class="deposit-grabber" aria-hidden="true"></div>
+            <button class="deposit-close" data-close aria-label="Close"><img src="assets/x-close-18.svg" alt=""></button>
+            <div class="coin-field" id="coin-field" aria-hidden="true">
+              <div class="coin-glow"></div>
+              <div class="deposit-logo"><img src="assets/logo.png" alt=""></div>
+            </div>
+            <div class="deposit-copy">
+              <h2 class="deposit-title" id="deposit-title">Deposit</h2>
+              <p class="deposit-text">Please connect your wallet to make a deposit.</p>
+            </div>
+            <div class="deposit-actions">
+              <button class="connect-btn">Connect Wallet</button>
+              <p class="deposit-note">Connecting your wallet is safe and does not give access to your funds.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Device frame (Figma 308:3429, iPhone 17 Pro Deep Blue) -->
+    <img class="layer masked" src="assets/p-buttons.svg" alt="" style="left:1px;top:191px;width:438.5px;height:225.5px;-webkit-mask-position:-6px -191px;mask-position:-6px -191px">
+    <img class="layer masked" src="assets/p-aluminum.svg" alt="" style="left:4px;top:6px;width:432px;height:904px;-webkit-mask-position:-9px -6px;mask-position:-9px -6px">
+    <div class="layer masked" style="left:10px;top:12px;width:420px;height:892px;-webkit-mask-position:-15px -12px;mask-position:-15px -12px">
+      <img class="layer" src="assets/p-rim.svg" alt="" style="left:-8px;top:-8px;width:436px;height:908px">
+    </div>
+    <img class="layer masked" src="assets/p-bezel.svg" alt="" style="left:12px;top:14px;width:416px;height:888px;-webkit-mask-position:-17px -14px;mask-position:-17px -14px">
+    <div class="antenna masked" style="left:4px;top:98px;-webkit-mask-position:-9px -98px;mask-position:-9px -98px"></div>
+    <div class="antenna masked" style="left:430px;top:98px;-webkit-mask-position:-435px -98px;mask-position:-435px -98px"></div>
+    <div class="antenna masked" style="left:4px;top:808px;-webkit-mask-position:-9px -808px;mask-position:-9px -808px"></div>
+    <div class="antenna masked" style="left:430px;top:808px;-webkit-mask-position:-435px -808px;mask-position:-435px -808px"></div>
+    <img class="layer masked" src="assets/p-oval2.svg" alt="" style="left:258px;top:46px;width:13px;height:13px;transform:rotate(1deg);-webkit-mask-position:-263px -46px;mask-position:-263px -46px">
+    <img class="layer masked" src="assets/p-oval3.svg" alt="" style="left:260px;top:48px;width:9px;height:9px;transform:rotate(51deg);-webkit-mask-position:-265px -48px;mask-position:-265px -48px">
+    <img class="layer masked" src="assets/p-oval.svg" alt="" style="left:263.3px;top:50px;width:2px;height:2px;mix-blend-mode:screen;transform:rotate(51deg);-webkit-mask-position:-268.3px -50px;mask-position:-268.3px -50px">
+    <img class="layer masked" src="assets/p-oval1.svg" alt="" style="left:263.45px;top:53.7px;width:2px;height:2px;mix-blend-mode:screen;transform:rotate(51deg);-webkit-mask-position:-268.45px -53.7px;mask-position:-268.45px -53.7px">
+    <div class="layer masked" style="left:130.08px;top:12px;width:178.85px;height:4px;-webkit-mask-position:-135.08px -12px;mask-position:-135.08px -12px">
+      <img class="layer" src="assets/p-speaker.svg" alt="" style="left:-1px;top:0;width:180.85px;height:6px">
+    </div>
+    <div class="reflection" style="left:1px;top:349px;height:67.5px;-webkit-mask-position:-6px -349px, 3px -343px;mask-position:-6px -349px, 3px -343px"></div>
+    <div class="reflection" style="left:1px;top:264px;height:67.5px;-webkit-mask-position:-6px -264px, 3px -258px;mask-position:-6px -264px, 3px -258px"></div>
+    <div class="reflection" style="left:1px;top:191px;height:42px;-webkit-mask-position:-6px -191px, 3px -185px;mask-position:-6px -191px, 3px -185px"></div>
+    <div class="layer" style="left:433.5px;top:287px;width:5px;height:107px;
+      -webkit-mask-image:url('assets/p-buttons-mask.svg'),url('assets/p-volume-mask.svg');mask-image:url('assets/p-buttons-mask.svg'),url('assets/p-volume-mask.svg');
+      -webkit-mask-size:448px 916px,432px 904px;mask-size:448px 916px,432px 904px;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+      -webkit-mask-position:-438.5px -287px,-429.5px -281px;mask-position:-438.5px -287px,-429.5px -281px;
+      -webkit-mask-composite:source-in;mask-composite:intersect">
+      <img class="layer" src="assets/p-power.svg" alt="" style="left:-4px;top:-4px;width:13px;height:115px">
+    </div>
+  </div>
+</main>
+
+<script>
+  // Chart grid
+  const yAxis = document.getElementById('y-axis');
+  ['3,400', '3,300', '3,200', '3,100', '3,000', '2,900'].forEach(v => {
+    yAxis.insertAdjacentHTML('beforeend',
+      `<div class="y-row"><div class="line"><img src="assets/grid-h.svg" alt=""></div><span class="axis-label">${v}</span></div>`);
+  });
+  const xAxis = document.getElementById('x-axis');
+  ['05.00', '06.00', '07.00', '08.00', '09.00', '10.00', '11.00', '12.00'].forEach(t => {
+    xAxis.insertAdjacentHTML('beforeend',
+      `<div class="x-col"><div class="line"><img src="assets/grid-v.svg" alt=""></div><span class="axis-label">${t}</span></div>`);
+  });
+
+  // Deposit pop up
+  const deposit = document.getElementById('deposit');
+  const sheet = deposit.querySelector('.deposit-sheet');
+  // Coin orb: each of the popup's 10 coins appears twice on a sphere around the logo.
+  // On open a small sphere spins a few fast turns while growing to full size, slowing as it opens,
+  // then keeps drifting slowly.
+  const coinOrb = (() => {
+    // Where each coin's two copies sit. 'outer' coins take the top and bottom bands, each copy at
+    // the opposite point of the orb from the other; 'middle' coins share one band, copies on
+    // opposite sides. Either way the copies mirror each other while turning and never meet.
+    // Orange (BTC, BNB) are far apart and the blue coins are spread between other colours.
+    const LAYOUT = {
+      outer: [['coin-6', 'coin-13'], ['coin-10', 'coin-14']],  // bands 0 + 9, then 1 + 8
+      middle: ['coin-8', 'coin-5', 'coin-11', 'coin-12', 'coin-7', 'coin-9'],  // bands 2 to 7
+    };
+    const BANDS = 10;
+    const LOGO_LAYER = 500;                     // coins stack around the logo by depth
+    const RADIUS = { x: 140, y: 88, z: 140 };  // ellipsoid, in screen pt
+    const LATITUDE = 0.8;                       // keep coins off the poles, where they would only turn in place
+    const FOCAL = 360;                          // perspective distance
+    const FOG = { clearFrom: 0.6, dim: 0.55, desaturate: 0.6, fade: 0.45 };  // back coins sink into the sheet colour, staying sharp
+    const NEAR_BLUR = { from: 1.28, to: 1.5, max: 1.2 };  // only the biggest, nearest coins get a soft focus (px)
+    const TILT = 0.38;                          // orbit tilt toward the viewer, rad
+    const SPIN = { start: 30, end: 0.22, tau: 0.45 };   // rad/s, decays from start to end (~2 turns)
+    const GROW = { from: 0.15, duration: 1.7 };          // small sphere to full size, alongside the spin
+    const field = document.getElementById('coin-field');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const golden = Math.PI * (3 - Math.sqrt(5));
+    const band = k => LATITUDE * (1 - (2 * k) / (BANDS - 1));     // band 0 at the top
+    const turn = k => golden * Math.min(k, BANDS - 1 - k);        // mirrored bands share a start angle
+    const slots = [];
+    LAYOUT.outer.forEach(([a, b], k) => {
+      slots.push([a, k, turn(k)], [a, BANDS - 1 - k, turn(k) + Math.PI]);
+      slots.push([b, k, turn(k) + Math.PI], [b, BANDS - 1 - k, turn(k)]);
+    });
+    LAYOUT.middle.forEach((name, i) => {
+      const k = LAYOUT.outer.length + i;
+      slots.push([name, k, golden * k], [name, k, golden * k + Math.PI]);
+    });
+    const coins = slots.map(([name, k, a], i) => {
+      const y = band(k), r = Math.sqrt(1 - y * y);
+      const el = document.createElement('div');
+      el.className = 'coin';
+      el.innerHTML = `<img ${name === 'coin-7' ? 'class="inset" ' : ''}src="assets/${name}.svg" alt="">`;
+      field.appendChild(el);
+      return { el, x: Math.cos(a) * r, y, z: Math.sin(a) * r, size: 0.75 + ((i * 37) % 9) / 20 };
+    });
+
+    let raf = 0, start = 0, last = 0, angle = 0;
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+    const progress = (elapsed, delay, duration) => Math.min(Math.max((elapsed - delay) / duration, 0), 1);
+
+    function render(elapsed) {
+      const spread = GROW.from + (1 - GROW.from) * easeOut(progress(elapsed, 0, GROW.duration));
+      const fadeIn = Math.min(elapsed / 0.35, 1);
+      const cosA = Math.cos(angle), sinA = Math.sin(angle);
+      const cosT = Math.cos(TILT), sinT = Math.sin(TILT);
+      for (const c of coins) {
+        // spin around the vertical axis, then tilt the orbit
+        const x1 = c.x * cosA + c.z * sinA;
+        const z1 = -c.x * sinA + c.z * cosA;
+        const y2 = c.y * cosT - z1 * sinT;
+        const z2 = c.y * sinT + z1 * cosT;
+        const X = x1 * RADIUS.x * spread, Y = y2 * RADIUS.y * spread, Z = z2 * RADIUS.z * spread;
+        const p = FOCAL / (FOCAL - Z);
+        const depth = (z2 + 1) / 2;               // 0 = far side, 1 = nearest
+        const grow = 0.55 + 0.45 * spread;            // coins also grow as the orb opens
+        const fog = Math.max(0, FOG.clearFrom - depth) / FOG.clearFrom;  // 0 in front, 1 at the very back
+        const s = c.el.style;
+        const scale = p * c.size * grow;
+        const nearBlur = Math.min(Math.max((scale - NEAR_BLUR.from) / (NEAR_BLUR.to - NEAR_BLUR.from), 0), 1) * NEAR_BLUR.max;
+        s.transform = `translate3d(${(X * p).toFixed(2)}px, ${(Y * p).toFixed(2)}px, 0) scale(${scale.toFixed(3)})`;
+        s.opacity = ((1 - FOG.fade * fog) * fadeIn).toFixed(3);
+        s.zIndex = Math.round(LOGO_LAYER + Z * 2);  // nearer coins always draw over farther ones
+        s.filter = fog > 0 ? `brightness(${(1 - FOG.dim * fog).toFixed(3)}) saturate(${(1 - FOG.desaturate * fog).toFixed(3)})`
+          : nearBlur > 0.1 ? `blur(${nearBlur.toFixed(2)}px)` : '';
+      }
+    }
+
+    function frame(now) {
+      const elapsed = (now - start) / 1000;
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+      angle += (SPIN.end + (SPIN.start - SPIN.end) * Math.exp(-elapsed / SPIN.tau)) * dt;
+      render(elapsed);
+      raf = requestAnimationFrame(frame);
+    }
+
+    return {
+      play() {
+        cancelAnimationFrame(raf);
+        angle = 0;
+        if (reduceMotion.matches) { render(GROW.duration); return; }
+        start = last = performance.now();
+        render(0);
+        raf = requestAnimationFrame(frame);
+      },
+      stop() { cancelAnimationFrame(raf); },
+    };
+  })();
+
+  let closeTimer;
+  function openDeposit() {
+    clearTimeout(closeTimer);
+    deposit.classList.remove('is-closing', 'is-animating');
+    sheet.style.removeProperty('--drag');
+    void deposit.offsetWidth; // restart the content animations
+    deposit.classList.add('is-open', 'is-animating');
+    deposit.setAttribute('aria-hidden', 'false');
+    coinOrb.play();
+  }
+  function closeDeposit() {
+    clearTimeout(autoCloseTimer);
+    if (!deposit.classList.contains('is-open')) return;
+    deposit.classList.remove('is-open');
+    deposit.classList.add('is-closing');
+    deposit.setAttribute('aria-hidden', 'true');
+    closeTimer = setTimeout(() => {
+      deposit.classList.remove('is-closing', 'is-animating');
+      sheet.style.removeProperty('--drag');
+      coinOrb.stop();
+    }, 360);
+  }
+  // Deposit, Withdraw and Send share the pop up; each sets its own title and text
+  const popupTitle = document.getElementById('deposit-title');
+  const popupText = deposit.querySelector('.deposit-text');
+  document.querySelectorAll('.action[data-title]').forEach(btn => btn.addEventListener('click', () => {
+    popupTitle.textContent = btn.dataset.title;
+    popupText.textContent = btn.dataset.text;
+    openDeposit();
+  }));
+  deposit.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeDeposit));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeposit(); });
+
+  // Demo autoplay, only in the portfolio's on-page preview (?preview): tap Deposit 3s
+  // after load, close the pop up after 10s on screen, and repeat. Zoomed in, it is manual.
+  const AUTOPLAY = { openAfter: 3000, closeAfter: 10000 };
+  let autoCloseTimer;
+  const autoplay = () => setTimeout(() => {
+    document.getElementById('deposit-btn').click();
+    autoCloseTimer = setTimeout(() => {
+      closeDeposit();
+      autoplay();
+    }, AUTOPLAY.closeAfter);
+  }, AUTOPLAY.openAfter);
+  if (new URLSearchParams(location.search).has('preview')) autoplay();
+
+  // Drag the sheet down to dismiss
+  let drag = null;
+  sheet.addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    drag = { y: e.clientY, t: performance.now(), dy: 0 };
+    try { sheet.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+    sheet.classList.add('is-dragging');
+  });
+  sheet.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const scale = sheet.getBoundingClientRect().height / sheet.offsetHeight;
+    const raw = (e.clientY - drag.y) / scale;
+    drag.dy = raw > 0 ? raw : -Math.sqrt(-raw) * 2; // rubber-band upward
+    sheet.style.setProperty('--drag', drag.dy + 'px');
+  });
+  const endDrag = () => {
+    if (!drag) return;
+    const velocity = drag.dy / (performance.now() - drag.t);
+    sheet.classList.remove('is-dragging');
+    if (drag.dy > 120 || (drag.dy > 20 && velocity > 0.5)) closeDeposit();
+    else sheet.style.removeProperty('--drag');
+    drag = null;
+  };
+  sheet.addEventListener('pointerup', endDrag);
+  sheet.addEventListener('pointercancel', endDrag);
+
+  // Sized for the portfolio's 560×380 Index box; the phone scales with the frame height
+  const phone = document.getElementById('phone');
+  const PHONE_ZOOM = 200 / 439;  // body 200px wide at a 380px-tall frame (Figma: 439px)
+  const fit = () => phone.style.setProperty('--s', (window.innerHeight / 380) * PHONE_ZOOM);
+  fit();
+  window.addEventListener('resize', fit);
+</script>
+</body>
+</html>
