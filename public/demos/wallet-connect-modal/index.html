@@ -576,9 +576,9 @@
   deposit.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeDeposit));
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDeposit(); });
 
-  // Demo autoplay, only in the portfolio's on-page preview (?preview): tap Deposit 3s
+  // Demo autoplay, only in the portfolio's on-page preview (?preview): tap Deposit 2s
   // after load, close the pop up after 10s on screen, and repeat. Zoomed in, it is manual.
-  const AUTOPLAY = { openAfter: 3000, closeAfter: 10000 };
+  const AUTOPLAY = { openAfter: 2000, closeAfter: 10000 };
   let autoCloseTimer;
   const autoplay = () => setTimeout(() => {
     document.getElementById('deposit-btn').click();

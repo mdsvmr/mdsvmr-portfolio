@@ -1424,10 +1424,10 @@
     addEventListener("resize", fit);
 
     // ---------- Demo autoplay, only in the portfolio's on-page preview (?preview) ----------
-    // Press "Upgrade to Pro" after 3s, show the success view for 5s, then close it,
+    // Press "Upgrade to Pro" after 2s, show the success view for 5s, then close it,
     // which reloads the page and so starts the loop over.
     if (PREVIEW) (async () => {
-      await wait(3000);
+      await wait(2000);
       form.requestSubmit();
       const success = document.getElementById("success");
       while (success.hidden) await wait(100);
