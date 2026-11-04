@@ -1,0 +1,174 @@
+/* Showcase frame: light canvas with an iPhone 17 Pro Silver. Sized for the portfolio's
+   560×380 Index box: the phone starts 60px from the top and runs off the bottom. */
+html, body {
+  --canvas: #f4f5f6;
+  background: var(--canvas);
+  color-scheme: light;
+  overflow: hidden;
+}
+
+.stage {
+  height: 100vh;
+  padding-top: calc(60 / 380 * 100vh);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.phone-fit {
+  width: calc(439px * var(--phone-scale, 1.0478));
+  height: calc(916px * var(--phone-scale, 1.0478));
+  flex-shrink: 0;
+}
+
+/* Device box is 439 × 916 (shown at 460px wide by default); every layer below uses Figma's insets on that box */
+.phone {
+  position: relative;
+  width: 439px;
+  height: 916px;
+  transform: scale(var(--phone-scale, 1.0478));
+  transform-origin: top left;
+}
+
+.ph-layer { position: absolute; display: block; max-width: none; }
+.ph-layer > img { display: block; max-width: none; width: 100%; height: 100%; }
+
+/* Shared device-silhouette mask (448 × 916, origin at x = -5) */
+.ph-buttons, .ph-aluminum, .ph-rim, .ph-bezel, .ph-corner, .ph-antenna,
+.ph-cam-mask, .ph-speaker {
+  -webkit-mask-image: url("assets/mockup/buttons-mask.svg");
+          mask-image: url("assets/mockup/buttons-mask.svg");
+  -webkit-mask-size: 448px 916px;
+          mask-size: 448px 916px;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  mask-mode: alpha;
+  mask-clip: no-clip;
+}
+
+.ph-buttons  { inset: 20.85% -0.11% 54.53% 0.23%; width: auto; height: auto;
+               -webkit-mask-position: -6px -191px; mask-position: -6px -191px; }
+.ph-aluminum { inset: 0.66% 0.68% 0.66% 0.91%; width: auto; height: auto;
+               -webkit-mask-position: -9px -6px; mask-position: -9px -6px; }
+.ph-rim      { inset: 1.31% 2.05% 1.31% 2.28%;
+               -webkit-mask-position: -15px -12px; mask-position: -15px -12px; }
+.ph-rim > img { position: absolute; inset: -0.9% -1.9%; width: auto; height: auto; }
+.ph-bezel    { inset: 1.53% 2.51% 1.53% 2.73%; width: auto; height: auto;
+               -webkit-mask-position: -17px -14px; mask-position: -17px -14px; }
+.ph-corner   { inset: 0.66% 0.68% 0.66% 0.91%; width: auto; height: auto;
+               -webkit-mask-position: -9px -6px; mask-position: -9px -6px; }
+
+.ph-antenna { background: rgba(0, 0, 0, 0.1); }
+.ph-antenna.a1 { inset: 10.7% 97.72% 88.32% 0.91%;  -webkit-mask-position: -9px -98px;   mask-position: -9px -98px; }
+.ph-antenna.a2 { inset: 10.7% 0.68% 88.32% 97.95%;  -webkit-mask-position: -435px -98px; mask-position: -435px -98px; }
+.ph-antenna.a3 { inset: 88.21% 97.72% 10.81% 0.91%; -webkit-mask-position: -9px -808px;  mask-position: -9px -808px; }
+.ph-antenna.a4 { inset: 88.21% 0.68% 10.81% 97.95%; -webkit-mask-position: -435px -808px; mask-position: -435px -808px; }
+
+/* Screen: 402 × 874 at (19, 21), clipped to the rounded display shape */
+.ph-screen {
+  position: absolute;
+  left: 19px;
+  top: 21px;
+  width: 402px;
+  height: 874px;
+  -webkit-mask-image: url("assets/mockup/screen-mask.svg");
+          mask-image: url("assets/mockup/screen-mask.svg");
+  -webkit-mask-size: 404px 876px;
+          mask-size: 404px 876px;
+  -webkit-mask-position: -1px -1px;
+          mask-position: -1px -1px;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+}
+
+/* Backing in the app's background colour, 2px larger than the screen all round */
+.ph-screen-backing {
+  position: absolute;
+  left: 17px;
+  top: 19px;
+  width: 406px;
+  height: 878px;
+  border-radius: 59px;
+  background: #0e1422; /* = --bg in styles.css */
+  pointer-events: none;
+}
+
+/* Dynamic Island (125 × 37pt, 11pt below the top of the display) */
+.ph-island {
+  position: absolute;
+  left: 157px;
+  top: 32px;
+  width: 125px;
+  height: 37px;
+  border-radius: 18.5px;
+  background: #000;
+  pointer-events: none;
+}
+
+/* Front camera lens, layered ovals */
+.ph-cam {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+  pointer-events: none;
+}
+.ph-cam-inner { flex: none; }
+.ph-cam-mask { position: relative; width: 100%; height: 100%; }
+.ph-cam-mask > img, .ph-cam-bleed > img { display: block; max-width: none; width: 100%; height: 100%; }
+.ph-cam-mask > img { position: absolute; inset: 0; }
+.ph-cam-bleed { position: absolute; inset: -22.22%; }
+
+.ph-cam.c1 { inset: 5.23% 38.71% 93.77% 59.21%; }
+.ph-cam.c1 .ph-cam-inner { width: hypot(98.2844cqw, 1.71557cqh); height: hypot(-1.71557cqw, 98.2844cqh); rotate: 1deg; }
+.ph-cam.c1 .ph-cam-mask { -webkit-mask-position: -264.922px -47.922px; mask-position: -264.922px -47.922px; }
+
+.ph-cam.c2 { inset: 5.04% 38.31% 93.58% 58.81%; }
+.ph-cam.c2 .ph-cam-mask { -webkit-mask-position: -263.171px -46.171px; mask-position: -263.171px -46.171px; }
+
+.ph-cam.c3 { inset: 5.41% 39.47% 94.28% 59.89%; mix-blend-mode: screen; }
+.ph-cam.c3 .ph-cam-mask { -webkit-mask-position: -267.9px -49.581px; mask-position: -267.9px -49.581px; }
+
+.ph-cam.c4 { inset: 5.82% 39.44% 93.88% 59.92%; mix-blend-mode: screen; }
+.ph-cam.c4 .ph-cam-mask { -webkit-mask-position: -268.042px -53.27px; mask-position: -268.042px -53.27px; }
+
+.ph-cam.c2 .ph-cam-inner,
+.ph-cam.c3 .ph-cam-inner,
+.ph-cam.c4 .ph-cam-inner { width: hypot(44.7448cqw, 55.2552cqh); height: hypot(-55.2552cqw, 44.7448cqh); rotate: 51deg; }
+
+.ph-speaker { inset: 1.31% 29.63% 98.25% 29.63%;
+              -webkit-mask-position: -135.076px -12px; mask-position: -135.076px -12px; }
+.ph-speaker > img { position: absolute; inset: 0 -0.56% -50% -0.56%; width: auto; height: auto; }
+
+/* Side buttons: metal reflections clipped to the silhouette and button cutouts */
+.ph-reflect, .ph-power {
+  -webkit-mask-image: url("assets/mockup/buttons-mask.svg"), url("assets/mockup/volume-down-mask.svg");
+          mask-image: url("assets/mockup/buttons-mask.svg"), url("assets/mockup/volume-down-mask.svg");
+  -webkit-mask-size: 448px 916px, 432px 904px;
+          mask-size: 448px 916px, 432px 904px;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-composite: source-in;
+          mask-composite: intersect;
+  mask-mode: alpha;
+  mask-clip: no-clip;
+  pointer-events: none;
+}
+.ph-reflect {
+  filter: blur(2px);
+  border-radius: 1px;
+  background-image: linear-gradient(180deg, #ebebeb 0%, #fff 3.8241%, #dfded9 11.269%, #d0d0cc 49.473%, #c4c4c0 90.984%, #696764 94.852%, #fff 97.825%, #8b8b87 100%);
+  box-shadow: inset -1px 0 1px 0 rgba(0, 0, 0, 0.5), inset 1px 0 1px 0 #a7a6a0;
+}
+.ph-vol-down { inset: 38.1% 98.63% 54.53% 0.23%;
+               -webkit-mask-position: -6px -349px, 3px -343px; mask-position: -6px -349px, 3px -343px; }
+.ph-vol-up   { inset: 28.82% 98.63% 63.81% 0.23%;
+               -webkit-mask-position: -6px -264px, 3px -258px; mask-position: -6px -264px, 3px -258px; }
+.ph-action   { inset: 20.85% 98.63% 74.56% 0.23%;
+               -webkit-mask-position: -6px -191px, 3px -185px; mask-position: -6px -191px, 3px -185px;
+               background-image: linear-gradient(180deg, #c4c4be 0%, #fffffa 5.2014%, #cdccc7 50.801%, #c2c1be 83.188%, #7f7e7a 91.112%, #e6e6e6 96.063%, #8f8f8f 100%);
+               box-shadow: inset -1px 0 2px 0 rgba(0, 0, 0, 0.5), inset 1px 0 1px 0 #a7a6a0; }
+.ph-power    { inset: 31.33% 0.11% 56.99% 98.75%;
+               -webkit-mask-position: -438.5px -287px, -429.5px -281px; mask-position: -438.5px -287px, -429.5px -281px; }
+.ph-power > img { position: absolute; inset: -3.74% -80%; width: auto; height: auto; }

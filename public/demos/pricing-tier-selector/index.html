@@ -1,0 +1,1435 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upgrade Plan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f4f5f6;
+      --surface: #ffffff;
+      --surface-muted: #f5f7fa;
+      --border: #d7deea;
+      --primary: #834cff;
+      --text: #000000;
+      --text-secondary: #707f8f;
+      --text-tertiary: #8d99a5;
+      --placeholder: #a9b2bc;
+      --error: #fb4d50;
+      --ease: cubic-bezier(0.2, 0, 0, 1);
+      --spring: cubic-bezier(0.32, 0.72, 0, 1);
+      --fast: 150ms;
+      --base: 250ms;
+      --expand: 560ms;   /* plan switch: feature list open/close */
+      --switch: 350ms;   /* plan switch: border, radio */
+      --tab: 550ms;      /* payment tab switch: tab border + icon colour */
+      --tab-out: 200ms;  /* payment tab switch: old fields leave */
+      --tab-in: 350ms;   /* payment tab switch: new fields arrive */
+      /* Price roll (read by setText in JS, also used by the crossed-out price) */
+      --roll-out: 180ms;
+      --roll-in: 280ms;
+      --roll-shift: 4px;
+      --roll-out-ease: cubic-bezier(0.4, 0, 1, 1);
+      --roll-in-ease: cubic-bezier(0, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { background: var(--bg); } /* also covers overscroll areas */
+
+    /* Portfolio embed: the card keeps its desktop layout and is scaled (--s) to fit the
+       frame, 400px wide in the 560×380 Index box. */
+    body {
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      font-family: "Geist", system-ui, sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; background: none; border: none; }
+    [hidden] { display: none !important; }
+
+    /* ---------- Card ---------- */
+    .card {
+      flex: none;
+      width: 760px;
+      transform: scale(var(--s, 1));
+      background: var(--surface);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      gap: 20px;
+      padding: 20px 24px 0;
+    }
+    .header__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .logo { position: relative; display: block; width: 32px; height: 32px; flex-shrink: 0; }
+    .logo img { position: absolute; left: 12.5%; top: 15.81%; display: block; }
+    .close {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+    .close img { display: block; }
+    .title { font-size: 20px; font-weight: 600; line-height: 1.5; letter-spacing: -0.2px; }
+    .subtitle { font-size: 14px; line-height: 1.5; letter-spacing: -0.28px; color: var(--text-secondary); }
+
+    /* Monthly / Yearly toggle */
+    .period {
+      display: flex;
+      align-items: center;
+      height: 26px;
+      background: var(--surface-muted);
+      border-radius: 5px;
+      flex-shrink: 0;
+    }
+    .period__btn {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding: 0 10px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      font-size: 12px;
+      line-height: 1.5;
+      letter-spacing: -0.24px;
+      color: var(--text-tertiary);
+      transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
+    }
+    .period__btn:not([aria-pressed="true"]):hover { color: var(--text-secondary); }
+    .period__btn[aria-pressed="true"] {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .body { display: flex; justify-content: space-between; }
+
+    .col-left {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 24px 12px 24px 24px;
+    }
+    .col-right {
+      width: 320px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 24px 24px 24px 12px;
+    }
+
+    .group { display: flex; flex-direction: column; gap: 6px; }
+    .group--payment { gap: 10px; }
+
+    .label {
+      font-size: 9px;
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: 0.36px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .row { display: flex; gap: 6px; }
+    /* Payment inputs: 8px between fields, label stays 6px from the first one */
+    .group--fields { gap: 8px; }
+    .group--fields > .label { margin-bottom: -2px; }
+    .row > * { flex: 1; min-width: 0; }
+
+    /* Inputs */
+    .field {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 36px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+    }
+    .field:hover { border-color: #c3ccdb; }
+    .field:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(131, 76, 255, 0.12); }
+
+    /* Error state */
+    .field-wrap { display: flex; flex-direction: column; }
+    .field.is-invalid,
+    .field.is-invalid:hover { border-color: var(--error); }
+    .field.is-invalid:focus-within { border-color: var(--error); box-shadow: 0 0 0 3px rgba(251, 77, 80, 0.12); }
+    .field-error {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows var(--base) var(--ease), opacity var(--base) var(--ease);
+    }
+    .field-error > span {
+      min-height: 0;
+      overflow: hidden;
+      padding-top: 0; /* 4px only while the error shows, so the hidden error adds no space */
+      transition: padding-top var(--base) var(--ease);
+      font-size: 12px;
+      line-height: 1.5;
+      letter-spacing: -0.12px;
+      color: var(--error);
+    }
+    .field.is-invalid + .field-error { grid-template-rows: 1fr; opacity: 1; }
+    .field.is-invalid + .field-error > span { padding-top: 4px; }
+    .field input,
+    .field select {
+      width: 100%;
+      height: 100%;
+      padding: 0 12px;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 12px;
+      line-height: 1.5;
+      letter-spacing: -0.24px;
+    }
+    .field input::placeholder { color: var(--placeholder); opacity: 1; }
+    .field--icon input { padding-right: 79px; }
+    .field__icon.field__brands { display: flex; align-items: center; gap: 8px; }
+    .field__brands img { display: block; }
+    .field__icon { position: absolute; right: 12px; pointer-events: none; display: block; }
+    .field select { appearance: none; padding-right: 40px; cursor: pointer; }
+    .field select:invalid { color: var(--placeholder); }
+
+    /* macOS-style popup menu for selects with data-menu-rows (height-limited, scrolls) */
+    .mac-menu {
+      --row: 22px;
+      position: fixed;
+      z-index: 100;
+      min-width: 160px;
+      padding: 5px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      list-style: none;
+      background: rgba(246, 246, 246, 0.82);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      backdrop-filter: saturate(180%) blur(20px);
+      border: 0.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 7px;
+      box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.5) inset, 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+      font-size: 13px;
+      letter-spacing: -0.08px;
+      color: rgba(0, 0, 0, 0.85);
+      outline: none;
+      opacity: 0;
+      transition: opacity 120ms ease-out;
+    }
+    .mac-menu.is-open { opacity: 1; transition: none; }
+    .mac-menu__item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: var(--row);
+      padding: 0 16px 0 22px;
+      border-radius: 4px;
+      white-space: nowrap;
+      cursor: default;
+      user-select: none;
+    }
+    .mac-menu__item.is-active { background: #0a7aff; color: #fff; }
+    .mac-menu__item[aria-selected="true"]::before {
+      content: "✓";
+      position: absolute;
+      left: 7px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+
+    /* Payment method tiles */
+    .method {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: -0.24px;
+      transition: border-color var(--tab) var(--ease), transform var(--fast) var(--ease);
+    }
+    .method:not([aria-checked="true"]):hover { border-color: #c3ccdb; }
+    .method:active { transform: scale(0.98); }
+    .method__icon {
+      display: block;
+      width: 16px;
+      height: 16px;
+      background-color: var(--text);
+      transition: background-color var(--tab) var(--ease);
+      -webkit-mask: var(--icon) center / contain no-repeat;
+      mask: var(--icon) center / contain no-repeat;
+    }
+    .method[aria-checked="true"] { border-color: var(--primary); }
+    .method[aria-checked="true"] .method__icon { background-color: var(--primary); }
+
+    .terms {
+      font-size: 12px;
+      line-height: 1.5;
+      letter-spacing: -0.24px;
+      color: var(--text-tertiary);
+    }
+    .terms a { color: inherit; text-decoration: underline; text-underline-position: from-font; text-decoration-skip-ink: none; }
+
+    /* Plans */
+    .plans { display: flex; flex-direction: column; gap: 6px; }
+    .plan {
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: left;
+      width: 100%;
+      transition: border-color var(--switch) var(--ease);
+    }
+    .plan:not([aria-checked="true"]):hover { border-color: #c3ccdb; }
+    .plan[aria-checked="true"] { border-color: var(--primary); }
+    .plan__head { display: flex; align-items: flex-start; gap: 8px; width: 100%; }
+
+    .radio {
+      flex-shrink: 0;
+      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color var(--switch) var(--ease), border-color var(--switch) var(--ease);
+    }
+    .radio::after {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 1px 2px 0 rgba(76, 36, 163, 0.6);
+      transform: scale(0);
+      transition: transform var(--switch) var(--ease);
+    }
+    .plan[aria-checked="true"] .radio { background: var(--primary); border-color: var(--primary); }
+    .plan[aria-checked="true"] .radio::after { transform: scale(1); }
+
+    .plan__info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .plan__name { font-size: 14px; font-weight: 500; line-height: 1.3; letter-spacing: -0.28px; }
+    .plan__desc { font-size: 12px; line-height: 1.5; letter-spacing: -0.24px; color: var(--text-secondary); }
+
+    .plan__price { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-weight: 500; white-space: nowrap; }
+    .plan__amount-row { position: relative; display: flex; align-items: center; }
+    .plan__amount { font-size: 14px; line-height: 1.3; }
+    .plan__per { font-size: 9px; line-height: 1.5; letter-spacing: 0.36px; color: var(--text-tertiary); }
+
+    /* Strikethrough original price: sits left of the amount outside the layout,
+       so it is never clipped. Timed with the price roll: it leaves together
+       with the old price and arrives together with the new one. */
+    .plan__was-wrap {
+      position: absolute;
+      right: 100%;
+      top: 50%;
+      padding-right: 4px;
+      opacity: 0;
+      transform: translate(4px, -50%);
+      transition: opacity var(--roll-out) var(--roll-out-ease), transform var(--roll-out) var(--roll-out-ease);
+      pointer-events: none;
+    }
+    .plan__was {
+      display: block;
+      font-size: 12px;
+      line-height: 1.3;
+      color: var(--text-secondary);
+      text-decoration: line-through;
+      text-decoration-skip-ink: none;
+    }
+    [data-period="yearly"] .plan__was-wrap {
+      opacity: 1;
+      transform: translate(0, -50%);
+      transition:
+        opacity var(--roll-in) var(--roll-in-ease) var(--roll-out),
+        transform var(--roll-in) var(--roll-in-ease) var(--roll-out);
+    }
+
+    /* Collapsible feature list: grid row 0fr -> 1fr, children stagger in */
+    .plan__features {
+      display: grid;
+      grid-template-rows: 0fr;
+      width: 100%;
+      transition: grid-template-rows var(--expand) var(--spring);
+    }
+    .plan__features-inner { min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
+    .plan__features-inner::before { content: ""; display: block; height: 0; }
+    .plan[aria-checked="true"] .plan__features { grid-template-rows: 1fr; }
+
+    /* Collapse: everything fades out together, fast. Expand: one by one via --i. */
+    .stagger {
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 170ms var(--ease), transform 170ms var(--ease);
+    }
+    .plan[aria-checked="true"] .stagger {
+      --delay: calc(110ms + var(--i, 0) * 55ms);
+      opacity: 1;
+      transform: none;
+      transition: opacity 400ms var(--ease) var(--delay), transform var(--expand) var(--spring) var(--delay);
+    }
+    .plan__divider { display: block; width: 100%; height: 1px; }
+    .features { display: flex; flex-direction: column; gap: 6px; }
+    .features .label { color: var(--text-tertiary); }
+    .features ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .features li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      letter-spacing: -0.24px;
+      color: var(--text-secondary);
+    }
+    .features li img { display: block; flex-shrink: 0; }
+
+    .total {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: -0.16px;
+      white-space: nowrap;
+    }
+
+    .cta {
+      height: 32px;
+      width: 100%;
+      background: var(--primary);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: -0.24px;
+      transition: background-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+    }
+    .cta:hover { background: #7440ee; }
+    .cta__label { display: inline-block; }
+    .cta { position: relative; }
+    .cta__spinner {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 14px;
+      height: 14px;
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity var(--fast) var(--ease), transform var(--base) var(--spring);
+      animation: spin 700ms linear infinite;
+    }
+    .cta.is-loading .cta__label { opacity: 0; transform: translateY(-3px); }
+    .cta.is-loading .cta__spinner { opacity: 1; transform: none; }
+    .cta__label { transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); }
+    @keyframes spin { to { rotate: 360deg; } }
+
+    /* ---------- Success view ---------- */
+    .card.is-success { width: 480px; }
+    .success {
+      position: relative;
+      isolation: isolate; /* lets the dot canvas sit behind content but above the card bg */
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 480px;
+      max-width: 100%;
+      padding: 24px;
+    }
+    .success .close { top: 24px; right: 24px; }
+    .success__icon { position: relative; display: block; width: 32px; height: 32px; }
+    .success__icon img { display: block; }
+    /* Dot grid + ripple waves drawn behind the top of the success card */
+    .success__fx {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      width: 100%;
+      height: 260px;
+      pointer-events: none;
+      -webkit-mask-image: radial-gradient(circle at 40px 40px, #000 0, rgba(0, 0, 0, 0.55) 110px, transparent 250px);
+      mask-image: radial-gradient(circle at 40px 40px, #000 0, rgba(0, 0, 0, 0.55) 110px, transparent 250px);
+    }
+    .success__head { display: flex; flex-direction: column; gap: 4px; }
+    .success__divider { display: block; width: 100%; height: 1px; transform-origin: left center; }
+    .s-text { font-size: 14px; line-height: 1.5; letter-spacing: -0.28px; }
+    .s-muted { color: var(--text-secondary); }
+    .receipt { position: relative; display: flex; flex-direction: column; gap: 4px; }
+    .receipt__amount {
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.32px;
+      font-variant-numeric: tabular-nums;
+    }
+    .receipt__logo { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; }
+    /* Same insets as the 32px logo, so the mark scales with the box */
+    .receipt__logo img { width: 75.82%; height: 68.41%; }
+    .s-rows { display: flex; flex-direction: column; gap: 4px; }
+    .s-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; white-space: nowrap; }
+    .btn-outline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 32px;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: -0.24px;
+      transition: background-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+    }
+    .btn-outline img { display: block; }
+    .btn-outline:hover { background: var(--surface-muted); }
+    .btn-outline:active { transform: scale(0.98); }
+    .cta:active { transform: scale(0.98); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+    }
+
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="view-form">
+    <header class="header">
+      <div class="header__text">
+        <span class="logo"><img src="assets/logo.svg" width="24.26" height="21.89" alt="Logo" /></span>
+        <h1 class="title">Upgrade Plan</h1>
+        <p class="subtitle">Do more with unlimited blocks, files, automations &amp; integrations.</p>
+      </div>
+      <div class="period" role="group" aria-label="Billing period">
+        <button type="button" class="period__btn" data-period="monthly" aria-pressed="true">Monthly</button>
+        <button type="button" class="period__btn" data-period="yearly" aria-pressed="false">Yearly</button>
+      </div>
+      <button type="button" class="close" aria-label="Close">
+        <img src="assets/x-close.svg" width="16" height="16" alt="" />
+      </button>
+    </header>
+
+    <form class="body" id="checkout" novalidate>
+      <section class="col-left">
+        <div class="group">
+          <label class="label" for="billed-to">Billed to</label>
+          <div class="field-wrap">
+            <div class="field"><input id="billed-to" type="text" placeholder="Your full name" autocomplete="off" data-1p-ignore data-lpignore="true" /></div>
+            <div class="field-error" aria-live="polite"><span></span></div>
+          </div>
+        </div>
+
+        <div class="group group--payment">
+          <div class="group group--fields">
+            <span class="label">Payment details</span>
+            <div class="row" role="radiogroup" aria-label="Payment method">
+              <button type="button" class="method" role="radio" aria-checked="true" data-method="card">
+                <span class="method__icon" style="--icon: url(assets/credit-card-02.svg)"></span>
+                Credit Card
+              </button>
+              <button type="button" class="method" role="radio" aria-checked="false" data-method="bank">
+                <span class="method__icon" style="--icon: url(assets/bank.svg)"></span>
+                Bank Transfer
+              </button>
+            </div>
+            <div class="field-wrap" data-for="card">
+              <div class="field field--icon">
+                <input id="card-number" type="text" inputmode="numeric" placeholder="Card Number" aria-label="Card number"
+                  autocomplete="cc-number" aria-describedby="card-number-error" />
+                <span class="field__icon field__brands">
+                  <img src="assets/visa.svg" width="31" height="10" alt="Visa" />
+                  <img src="assets/mastercard.svg" width="19.44" height="12" alt="Mastercard" />
+                </span>
+              </div>
+              <div class="field-error" aria-live="polite"><span id="card-number-error"></span></div>
+            </div>
+            <div class="field-wrap" data-for="bank" hidden>
+            <div class="field">
+              <select aria-label="Bank" required>
+                <option value="" disabled selected hidden>Select Bank</option>
+                <option>BCA</option>
+                <option>Mandiri</option>
+                <option>BNI</option>
+                <option>BRI</option>
+                <option>CIMB Niaga</option>
+              </select>
+              <img class="field__icon" src="assets/chevron-down.svg" width="16" height="16" alt="" />
+            </div>
+            <div class="field-error" aria-live="polite"><span></span></div>
+            </div>
+          <div class="row" data-for="card">
+            <div class="field-wrap">
+              <div class="field"><input id="expiration" type="text" inputmode="numeric" placeholder="Expiration" aria-label="Expiration (MM/YY)" autocomplete="cc-exp" /></div>
+              <div class="field-error" aria-live="polite"><span></span></div>
+            </div>
+            <div class="field-wrap">
+              <div class="field"><input type="text" inputmode="numeric" placeholder="CVC" aria-label="CVC" autocomplete="cc-csc" data-digits="3" /></div>
+              <div class="field-error" aria-live="polite"><span></span></div>
+            </div>
+          </div>
+          <div class="field-wrap" data-for="bank" hidden>
+            <div class="field">
+              <input type="text" inputmode="numeric" placeholder="Account Number" aria-label="Account number" />
+            </div>
+            <div class="field-error" aria-live="polite"><span></span></div>
+          </div>
+          <div class="field-wrap" data-for="card">
+          <div class="field">
+            <select name="country" aria-label="Country" required autocomplete="country-name" data-menu-rows="6">
+              <option value="" disabled selected hidden>Country</option>
+              <option>Australia</option>
+              <option>Brazil</option>
+              <option>Canada</option>
+              <option>China</option>
+              <option>France</option>
+              <option>Germany</option>
+              <option>India</option>
+              <option>Indonesia</option>
+              <option>Japan</option>
+              <option>Malaysia</option>
+              <option>Netherlands</option>
+              <option>New Zealand</option>
+              <option>Philippines</option>
+              <option>Singapore</option>
+              <option>South Korea</option>
+              <option>Thailand</option>
+              <option>United Arab Emirates</option>
+              <option>United Kingdom</option>
+              <option>United States</option>
+              <option>Vietnam</option>
+            </select>
+            <img class="field__icon" src="assets/chevron-down.svg" width="16" height="16" alt="" />
+          </div>
+          <div class="field-error" aria-live="polite"><span></span></div>
+          </div>
+          <div class="field-wrap" data-for="card">
+            <div class="field"><input type="text" inputmode="numeric" placeholder="ZIP" aria-label="ZIP" autocomplete="postal-code" data-digits="5" /></div>
+            <div class="field-error" aria-live="polite"><span></span></div>
+          </div>
+          <div class="field-wrap" data-for="bank" hidden>
+            <div class="field"><input type="text" placeholder="Account Holder Name" aria-label="Account holder name" autocomplete="off" data-1p-ignore data-lpignore="true" /></div>
+            <div class="field-error" aria-live="polite"><span></span></div>
+          </div>
+          <div class="field-wrap" data-for="bank" hidden>
+            <div class="field"><input type="text" inputmode="numeric" placeholder="Phone Number" aria-label="Phone number" autocomplete="tel" data-digits="15" /></div>
+            <div class="field-error" aria-live="polite"><span></span></div>
+          </div>
+          </div>
+          <p class="terms">By continuing, you agree to the <a href="#">Our Terms</a> and <a href="#">Conditions</a>.</p>
+        </div>
+      </section>
+
+      <section class="col-right">
+        <div class="group">
+          <span class="label">Billing options</span>
+          <div class="plans" role="radiogroup" aria-label="Plan">
+            <!-- data-monthly: price billed monthly; data-yearly: per-month price when billed yearly -->
+            <button type="button" class="plan" role="radio" aria-checked="true" data-plan="Pro" data-monthly="9.99" data-yearly="5.99">
+              <span class="plan__head">
+                <span class="radio"></span>
+                <span class="plan__info">
+                  <span class="plan__name">Pro</span>
+                  <span class="plan__desc">Best for individuals</span>
+                </span>
+                <span class="plan__price">
+                  <span class="plan__amount-row">
+                    <span class="plan__was-wrap"><span class="plan__was">$9.99</span></span>
+                    <span class="plan__amount"></span>
+                  </span>
+                  <span class="plan__per">PER MONTH</span>
+                </span>
+              </span>
+              <span class="plan__features">
+                <span class="plan__features-inner">
+                <img class="plan__divider stagger" src="assets/divider.svg" width="260" height="1" alt="" />
+                <span class="features">
+                  <span class="label stagger">Everything in Pro</span>
+                  <ul>
+                    <li class="stagger"><img src="assets/check.svg" width="16" height="16" alt="" />Unlimited project boards</li>
+                    <li class="stagger"><img src="assets/check.svg" width="16" height="16" alt="" />Kanban, list, &amp; calender view</li>
+                    <li class="stagger"><img src="assets/check.svg" width="16" height="16" alt="" />Email support</li>
+                  </ul>
+                </span>
+                </span>
+              </span>
+            </button>
+            <button type="button" class="plan" role="radio" aria-checked="false" data-plan="Business" data-monthly="19.99" data-yearly="15.99">
+              <span class="plan__head">
+                <span class="radio"></span>
+                <span class="plan__info">
+                  <span class="plan__name">Business</span>
+                  <span class="plan__desc">Best for mid size teams</span>
+                </span>
+                <span class="plan__price">
+                  <span class="plan__amount-row">
+                    <span class="plan__was-wrap"><span class="plan__was">$19.99</span></span>
+                    <span class="plan__amount"></span>
+                  </span>
+                  <span class="plan__per">PER MONTH</span>
+                </span>
+              </span>
+              <span class="plan__features">
+                <span class="plan__features-inner">
+                <img class="plan__divider stagger" src="assets/divider.svg" width="260" height="1" alt="" />
+                <span class="features">
+                  <span class="label stagger">Everything in Pro, plus</span>
+                  <ul>
+                    <li class="stagger"><img src="assets/check.svg" width="16" height="16" alt="" />SAML SSO &amp; SCIM provisioning</li>
+                    <li class="stagger"><img src="assets/check.svg" width="16" height="16" alt="" />Advanced security &amp; audit logs</li>
+                    <li class="stagger"><img src="assets/check.svg" width="16" height="16" alt="" />Custom data residency</li>
+                    <li class="stagger"><img src="assets/check.svg" width="16" height="16" alt="" />Unlimited guests &amp; workspaces</li>
+                  </ul>
+                </span>
+                </span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="total">
+          <span>Total</span>
+          <span id="total"></span>
+        </div>
+
+        <button type="submit" class="cta"><span class="cta__label" id="cta"></span><span class="cta__spinner" aria-hidden="true"></span></button>
+      </section>
+    </form>
+    </div>
+
+    <section class="success" id="success" hidden aria-labelledby="success-title">
+      <canvas class="success__fx" aria-hidden="true"></canvas>
+      <span class="success__icon"><img src="assets/check-circle.svg" width="32" height="32" alt="" /></span>
+      <div class="success__head s-item">
+        <h2 class="title" id="success-title">Upgrade plan success</h2>
+        <p class="s-text s-muted">Your plan is upgraded. Enjoy your new features!</p>
+      </div>
+      <img class="success__divider s-divider" src="assets/divider-solid.svg" width="432" height="1" alt="" />
+      <div class="receipt s-item">
+        <p class="s-text s-muted">Receipt from Cosmic, INC</p>
+        <p class="receipt__amount" id="r-amount">$0.00</p>
+        <p class="s-text s-muted" id="r-date"></p>
+        <span class="logo receipt__logo"><img src="assets/logo.svg" width="24.26" height="21.89" alt="" /></span>
+      </div>
+      <img class="success__divider s-divider" src="assets/divider-dashed-432.svg" width="432" height="1" alt="" />
+      <div class="s-rows s-text">
+        <div class="s-row s-item"><span class="s-muted">Receipt number</span><span id="r-receipt"></span></div>
+        <div class="s-row s-item"><span class="s-muted">Invoice number</span><span id="r-invoice"></span></div>
+        <div class="s-row s-item"><span class="s-muted">Payment method</span><span id="r-method"></span></div>
+      </div>
+      <img class="success__divider s-divider" src="assets/divider-dashed-432.svg" width="432" height="1" alt="" />
+      <div class="s-rows s-text">
+        <div class="s-row s-item"><span id="r-item"></span><span id="r-item-price"></span></div>
+        <div class="s-row s-item"><span class="s-muted">Qty 1</span></div>
+        <div class="s-row s-item"><span class="s-muted">Amount paid</span><span id="r-paid"></span></div>
+      </div>
+      <button type="button" class="btn-outline s-item">
+        <img src="assets/download-01.svg" width="14" height="14" alt="" />
+        Download Invoice
+      </button>
+      <button type="button" class="close" id="success-close" aria-label="Close and start over">
+        <img src="assets/x-close.svg" width="16" height="16" alt="" />
+      </button>
+    </section>
+  </main>
+
+  <script>
+    const state = { period: "monthly", plan: "Pro" };
+    const PREVIEW = new URLSearchParams(location.search).has("preview"); // portfolio's on-page preview
+    const plans = document.querySelectorAll(".plan");
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+    // Sets text with a roll: the old value slides up and fades out, then the
+    // new value slides in from below. Timings come from the --roll-* CSS
+    // variables so the crossed-out price stays in step.
+    const rootStyle = getComputedStyle(document.documentElement);
+    const cssVar = (name) => rootStyle.getPropertyValue(name).trim();
+    const ROLL_OUT = parseFloat(cssVar("--roll-out"));
+    const ROLL_IN = parseFloat(cssVar("--roll-in"));
+    const ROLL_SHIFT = parseFloat(cssVar("--roll-shift"));
+    const ROLL_OUT_EASE = cssVar("--roll-out-ease");
+    const ROLL_IN_EASE = cssVar("--roll-in-ease");
+    const rolling = new WeakMap(); // el -> text it is rolling to
+
+    function setText(el, text) {
+      const target = rolling.has(el) ? rolling.get(el) : el.textContent;
+      if (target === text) return;
+
+      // First render, or motion reduced: just set it.
+      if (el.textContent === "" || reduceMotion.matches) {
+        el.textContent = text;
+        return;
+      }
+
+      // Interrupt a roll in progress (e.g. fast toggling).
+      el.getAnimations().forEach((a) => a.cancel());
+      rolling.delete(el);
+      if (el.textContent === text) return; // toggled back before the swap
+
+      rolling.set(el, text);
+      const out = el.animate(
+        [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateY(-${ROLL_SHIFT}px)` }],
+        { duration: ROLL_OUT, easing: ROLL_OUT_EASE, fill: "forwards" }
+      );
+      out.finished.then(() => {
+        if (rolling.get(el) !== text) return;
+        rolling.delete(el);
+        el.textContent = text;
+        out.cancel();
+        el.animate(
+          [{ opacity: 0, transform: `translateY(${ROLL_SHIFT}px)` }, { opacity: 1, transform: "none" }],
+          { duration: ROLL_IN, easing: ROLL_IN_EASE }
+        );
+      }, () => {}); // cancelled by a newer change
+    }
+
+    // Stagger order for the feature rows inside each plan.
+    plans.forEach((p) =>
+      p.querySelectorAll(".stagger").forEach((el, i) => el.style.setProperty("--i", i)));
+
+    function render() {
+      const yearly = state.period === "yearly";
+      document.body.dataset.period = state.period;
+      document.querySelectorAll(".period__btn").forEach((b) =>
+        b.setAttribute("aria-pressed", b.dataset.period === state.period));
+      plans.forEach((p) => {
+        p.setAttribute("aria-checked", p.dataset.plan === state.plan);
+        setText(p.querySelector(".plan__amount"), "$" + p.dataset[state.period]);
+      });
+      const selected = [...plans].find((p) => p.dataset.plan === state.plan);
+      const price = Number(selected.dataset[state.period]);
+      setText(document.getElementById("total"),
+        yearly ? "$" + (price * 12).toFixed(2) + " / Year" : "$" + price.toFixed(2) + " / Month");
+      setText(document.getElementById("cta"), "Upgrade to " + state.plan);
+    }
+
+    document.querySelectorAll(".period__btn").forEach((b) =>
+      b.addEventListener("click", () => { state.period = b.dataset.period; render(); }));
+    plans.forEach((p) =>
+      p.addEventListener("click", () => { state.plan = p.dataset.plan; render(); }));
+    // Payment tab switch: old fields slide up and fade out, then the new
+    // fields slide in from below (same feel as the price roll).
+    const TAB_OUT = parseFloat(cssVar("--tab-out"));
+    const TAB_IN = parseFloat(cssVar("--tab-in"));
+    let tabSwitch = 0; // newest switch wins if the user clicks quickly
+
+    document.querySelectorAll(".method").forEach((m) =>
+      m.addEventListener("click", async () => {
+        if (m.getAttribute("aria-checked") === "true") return;
+        document.querySelectorAll(".method").forEach((x) => x.setAttribute("aria-checked", x === m));
+
+        const id = ++tabSwitch;
+        const method = m.dataset.method;
+        const fields = [...document.querySelectorAll("[data-for]")];
+        fields.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+        const outgoing = fields.filter((el) => !el.hidden && el.dataset.for !== method);
+        const incoming = fields.filter((el) => el.dataset.for === method && el.hidden);
+
+        if (!reduceMotion.matches && outgoing.length) {
+          await Promise.all(outgoing.map((el) => el.animate(
+            [{ opacity: 1, transform: "none" }, { opacity: 0, transform: `translateY(-${ROLL_SHIFT}px)` }],
+            { duration: TAB_OUT, easing: ROLL_OUT_EASE, fill: "forwards" }
+          ).finished.catch(() => {})));
+          if (id !== tabSwitch) return; // a newer click took over
+        }
+
+        fields.forEach((el) => {
+          el.hidden = el.dataset.for !== method;
+          el.getAnimations().forEach((a) => a.cancel());
+        });
+        if (reduceMotion.matches) return;
+        incoming.forEach((el) => el.animate(
+          [{ opacity: 0, transform: `translateY(${ROLL_SHIFT}px)` }, { opacity: 1, transform: "none" }],
+          { duration: TAB_IN, easing: ROLL_IN_EASE }
+        ));
+      }));
+
+    render();
+
+    // ---------- Card number: 16 digits, grouped "#### #### #### ####" ----------
+    const cardInput = document.getElementById("card-number");
+    const cardField = cardInput.closest(".field");
+    const CARD_DIGITS = 16;
+
+    const digitsOf = (s) => s.replace(/\D/g, "");
+    const formatCard = (d) => d.replace(/(\d{4})(?=\d)/g, "$1 ");
+
+    // Shows (or clears) the message under a field. Keep the last message while the error
+    // collapses so it fades out instead of vanishing.
+    function setFieldError(control, message) {
+      const field = control.closest(".field");
+      const text = field.nextElementSibling?.querySelector("span");
+      if (message && text) text.textContent = message;
+      field.classList.toggle("is-invalid", Boolean(message));
+      control.setAttribute("aria-invalid", Boolean(message));
+    }
+    const setCardError = (message) => setFieldError(cardInput, message);
+
+    function validateCard() {
+      const ok = digitsOf(cardInput.value).length === CARD_DIGITS;
+      setCardError(ok ? "" : "Your card number is incomplete.");
+      return ok;
+    }
+
+    cardInput.addEventListener("input", () => {
+      // Reformat while keeping the caret after the same digit it was after.
+      const caret = cardInput.selectionStart;
+      const digitsBeforeCaret = digitsOf(cardInput.value.slice(0, caret)).length;
+      const digits = digitsOf(cardInput.value).slice(0, CARD_DIGITS);
+      cardInput.value = formatCard(digits);
+      let pos = 0, seen = 0;
+      while (seen < digitsBeforeCaret && pos < cardInput.value.length) {
+        if (/\d/.test(cardInput.value[pos])) seen++;
+        pos++;
+      }
+      cardInput.setSelectionRange(pos, pos);
+      // Once an error is shown, clear it as soon as the number is complete.
+      if (cardField.classList.contains("is-invalid") && digits.length === CARD_DIGITS) setCardError("");
+    });
+    // Validate when leaving the field, but not if it was left empty.
+    cardInput.addEventListener("blur", () => { if (cardInput.value && !validateCard()) showOnlyError(cardInput); });
+
+    // ---------- Submit: go straight to the success view (no fields required) ----------
+    const form = document.getElementById("checkout");
+    const $ = (sel) => form.querySelector(sel);
+    const currentMethod = () => document.querySelector(".method[aria-checked='true']").dataset.method;
+
+    // Every visible field must be filled before upgrading; the on-page preview skips this.
+    // Card asks for country and ZIP, bank transfer for account holder name and phone number.
+    // Only one error shows at a time: the topmost field that is still incomplete.
+    const required = [
+      ["#billed-to", (v) => v.trim(), "Please enter your full name."],
+      ["#card-number", (v) => digitsOf(v).length === CARD_DIGITS, "Your card number is incomplete."],
+      ["#expiration", (v) => digitsOf(v).length === 4, "Your expiration date is incomplete."],
+      ["[aria-label=CVC]", (v) => digitsOf(v).length === 3, "Your CVC is incomplete."],
+      ["[aria-label=Bank]", (v) => v, "Please select a bank."],
+      ["[aria-label='Account number']", (v) => v.trim(), "Please enter your account number."],
+      ["[aria-label=Country]", (v) => v, "Please select a country."],
+      ["[aria-label=ZIP]", (v) => v.trim(), "Please enter your ZIP code."],
+      ["[aria-label='Account holder name']", (v) => v.trim(), "Please enter the account holder name."],
+      ["[aria-label='Phone number']", (v) => v.trim(), "Please enter your phone number."],
+    ].map(([sel, ok, message]) => ({ control: $(sel), ok, message }));
+    const isShown = (control) => !control.closest("[data-for]")?.hidden;
+
+    // The topmost incomplete field, looking only above `before` when it is given.
+    function firstIncomplete(before) {
+      for (const { control, ok } of required) {
+        if (control === before) return null;
+        if (isShown(control) && !ok(control.value)) return control;
+      }
+      return null;
+    }
+
+    function showOnlyError(target) {
+      required.forEach(({ control, message }) => setFieldError(control, control === target ? message : ""));
+    }
+
+    function validateForm() {
+      const first = firstIncomplete();
+      if (first) refuse(first);
+      return !first;
+    }
+
+    // A field can't be entered while one above it is still incomplete: that one shows its
+    // error, takes the focus back and gives a short shake (as it does on a blocked upgrade). Clicks are stopped before they
+    // focus the field (or open the country menu); Tab is caught as the focus arrives.
+    function blockedBy(target) {
+      const entry = required.find(({ control }) => control === target);
+      return entry && !PREVIEW ? firstIncomplete(entry.control) : null;
+    }
+
+    function refuse(above) {
+      showOnlyError(above);
+      above.focus();
+      if (reduceMotion.matches) return;
+      above.closest(".field").animate(
+        [{ transform: "none" }, { transform: "translateX(-4px)" }, { transform: "translateX(4px)" },
+         { transform: "translateX(-3px)" }, { transform: "translateX(2px)" }, { transform: "none" }],
+        { duration: 320, easing: "ease-out" }
+      );
+    }
+
+    form.addEventListener("mousedown", (e) => {
+      const control = e.target.closest(".field")?.querySelector("input, select");
+      const above = control && blockedBy(control);
+      if (!above) return;
+      e.preventDefault();
+      e.stopPropagation();
+      refuse(above);
+    }, true);
+
+    form.addEventListener("focusin", (e) => {
+      const above = blockedBy(e.target);
+      if (above) refuse(above);
+    });
+
+    // Once an error shows, it clears as soon as the field is complete.
+    required.forEach(({ control, ok }) => ["input", "change"].forEach((type) =>
+      control.addEventListener(type, () => {
+        if (control.closest(".field").classList.contains("is-invalid") && ok(control.value)) setFieldError(control, "");
+      })));
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cta = form.querySelector(".cta");
+      if (cta.disabled) return;
+      if (!PREVIEW && !validateForm()) return;
+      cta.disabled = true;
+      cta.classList.add("is-loading");
+      await wait(reduceMotion.matches ? 0 : 1100); // simulated payment request
+      fillReceipt();
+      await showSuccess();
+    });
+
+    // Closing the success view starts over with a fresh form.
+    // Fade the success card out, reload, then fade the fresh form card in.
+    // form.reset() first so browsers that restore field values on reload don't refill it.
+    const FADE_FLAG = "upgrade-plan:fade-in";
+    document.getElementById("success-close").addEventListener("click", async () => {
+      const card = document.querySelector(".card");
+      if (!reduceMotion.matches) {
+        await card.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "ease-out", fill: "forwards" }).finished;
+      }
+      try { sessionStorage.setItem(FADE_FLAG, "1"); } catch {}
+      form.reset();
+      location.reload();
+    });
+    try {
+      if (sessionStorage.getItem(FADE_FLAG)) {
+        sessionStorage.removeItem(FADE_FLAG);
+        if (!reduceMotion.matches) {
+          document.querySelector(".card").animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, easing: "ease-out" });
+        }
+      }
+    } catch {}
+
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const randomDigits = (n) => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join("");
+    const randomCode = (n) => Array.from({ length: n }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 36)]).join("");
+
+    function fillReceipt() {
+      const yearly = state.period === "yearly";
+      const plan = [...plans].find((p) => p.dataset.plan === state.plan);
+      const amount = Number(plan.dataset[state.period]) * (yearly ? 12 : 1);
+      const money = "$" + amount.toFixed(2);
+
+      // Fields may be empty, so fall back to the design's sample values.
+      let method;
+      if (currentMethod() === "card") {
+        const digits = digitsOf(cardInput.value);
+        if (digits.length < 4) {
+          method = "Visa - 2980";
+        } else {
+          const brand = digits[0] === "4" ? "Visa" : /^[25]/.test(digits) ? "Mastercard" : "Card";
+          method = `${brand} - ${digits.slice(-4)}`;
+        }
+      } else {
+        const bank = $("[aria-label=Bank]").value || "Bank Transfer";
+        const account = $("[aria-label='Account number']").value.trim();
+        method = account ? `${bank} - ${account.slice(-4)}` : bank;
+      }
+
+      const set = (id, text) => (document.getElementById(id).textContent = text);
+      set("r-amount", money);
+      set("r-date", "Paid " + new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }));
+      set("r-receipt", `${randomDigits(4)} - ${randomDigits(4)} - ${randomDigits(4)}`);
+      set("r-invoice", `${randomCode(8)} - ${randomDigits(4)}`);
+      set("r-method", method);
+      set("r-item", `Cosmic ${state.plan} (${yearly ? "Yearly" : "Monthly"})`);
+      set("r-item-price", money);
+      set("r-paid", money);
+      document.getElementById("r-amount").dataset.value = amount;
+    }
+
+    // ---------- Success icon effect: dot grid with ripple waves ----------
+    // A faint grey dot grid; purple rings travel outward from the icon by
+    // lighting up the dots they pass, plus a few random sparkles.
+    function playSuccessFx(success, { still = false } = {}) {
+      const canvas = success.querySelector(".success__fx");
+      const icon = success.querySelector(".success__icon").getBoundingClientRect();
+      const box = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(box.width * dpr);
+      canvas.height = Math.round(box.height * dpr);
+      const ctx = canvas.getContext("2d");
+      ctx.scale(dpr, dpr);
+
+      const GAP = 4, DOT = 1, LIT = 1.6; // LIT = size of a glowing dot
+      const cx = icon.left - box.left + icon.width / 2;
+      const cy = icon.top - box.top + icon.height / 2;
+      const dots = [];
+      const grid = []; // grid[row][col] -> dot, for picking neighbours
+      // Afterglow: some dots keep glowing after a ring passes, so rings dissolve
+      // into scattered, flickering dots instead of vanishing. Each 20px patch
+      // gets a random density (mostly low, a few high) so the scatter is uneven:
+      // some denser spots, some empty areas, never a flat even spread.
+      const patches = new Map();
+      const densityAt = (row, col) => {
+        const key = Math.floor(row / 5) + "," + Math.floor(col / 5);
+        if (!patches.has(key)) patches.set(key, Math.pow(Math.random(), 2) * 3); // mean 1
+        return patches.get(key);
+      };
+      for (let y = GAP / 2, row = 0; y < box.height; y += GAP, row++) {
+        grid[row] = [];
+        for (let x = GAP / 2, col = 0; x < box.width; x += GAP, col++) {
+          const p = {
+            x, y, d: Math.hypot(x - cx, y - cy),
+            // Dividing by the patch density makes lingering likelier in dense patches.
+            stay: Math.random() / Math.max(densityAt(row, col), 1e-3),
+            decay: 0.35 + Math.random() * 0.9, phase: Math.random() * Math.PI * 2,
+          };
+          dots.push(p);
+          grid[row].push(p);
+        }
+      }
+
+      // Three waves, 350ms apart; each grows ~140px/s and fades as it travels.
+      const WAVES = [0, 0.35, 0.7], SPEED = 140, LIFE = 1.8, BAND = 9;
+      const STAY_CHANCE = 0.03; // average share of passed dots that linger
+
+      // Sparkles: tiny compact groups of 2–4 neighbouring dots that flicker on and
+      // off at random spots (no long lines), mostly after the waves are gone.
+      const SHAPES = [
+        [[0, 0], [0, 1]],                   // pair, side by side
+        [[0, 0], [1, 0]],                   // pair, stacked
+        [[0, 0], [0, 1], [1, 0]],           // corner
+        [[0, 0], [1, 0], [1, 1]],           // corner
+        [[0, 0], [1, 1]],                   // diagonal pair
+        [[0, 0], [0, 1], [1, 0], [1, 1]],   // 2×2 clump
+        [[0, 0], [1, 0], [2, 0]],           // short stack of 3
+      ];
+      const rand = (a, b) => a + Math.random() * (b - a);
+      // Visible area, not under the icon, and room for a group before the canvas edge.
+      const anchors = dots.filter((p) => p.d > 34 && p.d < 230 && p.x < box.width - GAP * 3 && p.y < box.height - GAP * 3);
+      const clusters = Array.from({ length: 8 }, () => {
+        const a = anchors[Math.floor(Math.random() * anchors.length)];
+        const row = Math.round((a.y - GAP / 2) / GAP), col = Math.round((a.x - GAP / 2) / GAP);
+        const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        const members = shape.map(([dr, dc]) => grid[row + dr]?.[col + dc]).filter(Boolean);
+        return { members, at: rand(1.0, 3.6), life: rand(0.5, 0.9), phase: rand(0, 6.28) };
+      });
+      const DURATION = 4.6;
+      const flicker = (t, phase) => 0.65 + 0.35 * Math.sin(t * 22 + phase);
+
+      function draw(t) {
+        ctx.clearRect(0, 0, box.width, box.height);
+        ctx.fillStyle = "rgba(112, 127, 143, 0.2)";
+        for (const p of dots) ctx.fillRect(p.x - DOT / 2, p.y - DOT / 2, DOT, DOT);
+        if (still) return;
+
+        for (const p of dots) {
+          let glow = 0;
+          for (const w of WAVES) {
+            const age = t - w;
+            if (age < 0) continue;
+            // The ring itself
+            if (age <= LIFE) {
+              const k = (p.d - (22 + SPEED * age)) / BAND;
+              glow += Math.exp(-k * k) * Math.pow(1 - age / LIFE, 1.4);
+            }
+            // Afterglow left behind once the ring has passed this dot
+            const passedAt = (p.d - 22) / SPEED;          // ring age when it reached the dot
+            const since = age - passedAt;
+            if (since > 0 && passedAt > 0 && passedAt < LIFE && p.stay < STAY_CHANCE) {
+              const strength = Math.pow(1 - passedAt / LIFE, 1.4);
+              glow += strength * Math.exp(-since / p.decay) * flicker(t, p.phase) * 0.8;
+            }
+          }
+          if (glow > 0.04) {
+            ctx.fillStyle = `rgba(131, 76, 255, ${Math.min(1, glow) * 0.9})`;
+            ctx.fillRect(p.x - LIT / 2, p.y - LIT / 2, LIT, LIT);
+          }
+        }
+        for (const c of clusters) {
+          const age = t - c.at;
+          if (age < 0 || age > c.life) continue;
+          // Soft rise and fall with a little flicker, all dots in the group together.
+          const a = Math.sin((age / c.life) * Math.PI) * flicker(t, c.phase) * 0.85;
+          ctx.fillStyle = `rgba(131, 76, 255, ${a})`;
+          for (const p of c.members) ctx.fillRect(p.x - LIT / 2, p.y - LIT / 2, LIT, LIT);
+        }
+      }
+
+      if (still) return draw(0);
+      const start = performance.now();
+      (function frame(now) {
+        const t = (now - start) / 1000;
+        draw(Math.min(t, DURATION));
+        if (t < DURATION) requestAnimationFrame(frame);
+      })(start);
+    }
+
+    async function showSuccess() {
+      const card = document.querySelector(".card");
+      const formView = document.querySelector(".view-form");
+      const success = document.getElementById("success");
+      const amountEl = document.getElementById("r-amount");
+
+      if (reduceMotion.matches) {
+        formView.hidden = true;
+        success.hidden = false;
+        card.classList.add("is-success");
+        playSuccessFx(success, { still: true });
+        return;
+      }
+
+      const spring = "cubic-bezier(0.32, 0.72, 0, 1)";
+
+      // 1. Form leaves: fade, shrink a touch, blur.
+      await formView.animate(
+        [{ opacity: 1, transform: "none", filter: "blur(0)" },
+         { opacity: 0, transform: "scale(0.98)", filter: "blur(4px)" }],
+        { duration: 220, easing: "ease-in", fill: "forwards" }
+      ).finished;
+
+      // 2. Card morphs from the form size to the success size.
+      const from = { width: card.offsetWidth, height: card.offsetHeight };
+      formView.hidden = true;
+      success.hidden = false;
+      card.classList.add("is-success");
+      const to = { width: card.offsetWidth, height: card.offsetHeight };
+      const items = [...success.querySelectorAll(".s-item, .s-divider")];
+      card.animate(
+        [{ width: from.width + "px", height: from.height + "px" },
+         { width: to.width + "px", height: to.height + "px" }],
+        { duration: 600, easing: spring }
+      );
+
+      // 3. Content enters top to bottom ("backwards" keeps each item hidden until its turn).
+      items.forEach((el, i) => {
+        const delay = 220 + i * 45;
+        const isDivider = el.classList.contains("s-divider");
+        el.animate(
+          isDivider
+            ? [{ opacity: 0 }, { opacity: 1 }]
+            : [{ opacity: 0, transform: "translateY(10px)", filter: "blur(3px)" },
+               { opacity: 1, transform: "none", filter: "blur(0)" }],
+          { duration: isDivider ? 500 : 450, delay, easing: spring, fill: "backwards" }
+        );
+      });
+
+      // 4. Check icon fades in and sends ripple waves through the dot grid.
+      success.querySelector(".success__icon").animate(
+        [{ opacity: 0 }, { opacity: 1 }],
+        { duration: 300, delay: 200, easing: "ease-out", fill: "backwards" }
+      );
+      setTimeout(() => playSuccessFx(success), 200);
+
+      // 5. Amount counts up.
+      const target = Number(amountEl.dataset.value);
+      await wait(380);
+      const start = performance.now(), duration = 900;
+      // Guarantee the final value even if frames are throttled (e.g. background tab).
+      setTimeout(() => (amountEl.textContent = "$" + target.toFixed(2)), duration + 50);
+      (function tick(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 4);
+        amountEl.textContent = "$" + (target * eased).toFixed(2);
+        if (t < 1) requestAnimationFrame(tick);
+      })(start);
+    }
+
+    // ---------- Digit-only inputs (CVC, ZIP): data-digits = max length ----------
+    document.querySelectorAll("input[data-digits]").forEach((input) => {
+      const max = Number(input.dataset.digits);
+      input.addEventListener("input", () => {
+        const clean = digitsOf(input.value).slice(0, max);
+        if (clean !== input.value) {
+          const caret = input.selectionStart - (input.value.length - clean.length);
+          input.value = clean;
+          input.setSelectionRange(Math.max(0, caret), Math.max(0, caret));
+        }
+      });
+    });
+
+    // ---------- Expiration: MM / YY ----------
+    const expInput = document.getElementById("expiration");
+    const EXP_SEP = " / ";
+
+    // Turns typed digits into a valid "MM / YY" string.
+    // "4" -> "04 / ", "1" waits for the 2nd digit, "13" -> "01 / 3", "00" is not allowed.
+    function formatExpiry(raw, adding) {
+      let d = digitsOf(raw);
+      if (/^[2-9]/.test(d)) d = "0" + d;
+      else if (/^1[3-9]/.test(d)) d = "01" + d.slice(1);
+      else if (/^00/.test(d)) d = "0" + d.slice(2);
+      d = d.slice(0, 4);
+      if (d.length > 2) return d.slice(0, 2) + EXP_SEP + d.slice(2);
+      // Add the separator right after a complete month, but not while deleting.
+      return d.length === 2 && adding ? d + EXP_SEP : d;
+    }
+
+    expInput.addEventListener("input", (e) => {
+      const adding = !e.inputType || e.inputType.startsWith("insert");
+      let raw = expInput.value;
+      // Backspace right after "MM / " removes the separator *and* the last month digit.
+      if (!adding && digitsOf(raw).length === 2 && expInput.dataset.prev?.endsWith(EXP_SEP)) raw = raw.slice(0, 1);
+      expInput.value = formatExpiry(raw, adding);
+      expInput.dataset.prev = expInput.value;
+    });
+
+    // ---------- macOS-style menu for <select data-menu-rows> ----------
+    // The native popup can't be height-limited, so we keep the real <select>
+    // (same look as the Bank field) and show our own menu instead of the OS one.
+    function initMacMenu(select) {
+      const rows = Number(select.dataset.menuRows);
+      const opts = [...select.options].filter((o) => !o.hidden);
+      const menu = document.createElement("ul");
+      menu.className = "mac-menu";
+      menu.setAttribute("role", "listbox");
+      menu.hidden = true;
+      menu.innerHTML = opts.map((o) =>
+        `<li class="mac-menu__item" role="option" aria-selected="false">${o.textContent}</li>`).join("");
+      document.body.appendChild(menu);
+      const items = [...menu.children];
+      let active = -1;
+
+      const isOpen = () => !menu.hidden;
+
+      function setActive(i, scroll) {
+        items[active]?.classList.remove("is-active");
+        active = i;
+        items[active]?.classList.add("is-active");
+        if (scroll) items[active]?.scrollIntoView({ block: "nearest" });
+      }
+
+      function open() {
+        const field = select.closest(".field").getBoundingClientRect();
+        const rowH = 22, pad = 5;
+        const height = Math.min(opts.length, rows) * rowH + pad * 2 + 1;
+        const below = innerHeight - field.bottom - 8;
+        menu.style.left = field.left + "px";
+        menu.style.width = field.width + "px";
+        menu.style.maxHeight = height + "px";
+        // Open below the field; flip above if there isn't room.
+        menu.style.top = (below >= height ? field.bottom + 4 : Math.max(8, field.top - 4 - height)) + "px";
+        items.forEach((li, i) => li.setAttribute("aria-selected", opts[i].selected));
+        menu.hidden = false;
+        menu.getBoundingClientRect();
+        menu.classList.add("is-open");
+        const sel = opts.findIndex((o) => o.selected);
+        setActive(sel, false);
+        // Put the selected item in the middle of the visible rows, like macOS.
+        menu.scrollTop = sel > 0 ? sel * rowH - (Math.floor(rows / 2) * rowH) : 0;
+        select.focus();
+      }
+
+      function close() {
+        if (!isOpen()) return;
+        menu.classList.remove("is-open");
+        setTimeout(() => { if (!menu.classList.contains("is-open")) menu.hidden = true; }, 120);
+      }
+
+      function choose(i) {
+        opts[i].selected = true;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        close();
+      }
+
+      select.addEventListener("mousedown", (e) => {
+        e.preventDefault(); // block the native OS popup
+        isOpen() ? close() : open();
+      });
+      select.addEventListener("keydown", (e) => {
+        if (!isOpen()) {
+          if ([" ", "Enter", "ArrowDown", "ArrowUp"].includes(e.key)) { e.preventDefault(); open(); }
+          return;
+        }
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          const next = active + (e.key === "ArrowDown" ? 1 : -1);
+          setActive(Math.min(items.length - 1, Math.max(0, next)), true);
+        } else if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          if (active >= 0) choose(active);
+        } else if (e.key === "Escape" || e.key === "Tab") {
+          close();
+        } else if (e.key.length === 1) {
+          e.preventDefault(); // type-ahead
+          const i = opts.findIndex((o) => o.textContent.toLowerCase().startsWith(e.key.toLowerCase()));
+          if (i >= 0) setActive(i, true);
+        }
+      });
+      menu.addEventListener("mousedown", (e) => e.preventDefault()); // keep focus on the select
+      menu.addEventListener("mousemove", (e) => {
+        const li = e.target.closest(".mac-menu__item");
+        if (li) setActive(items.indexOf(li), false);
+      });
+      menu.addEventListener("mouseleave", () => setActive(-1, false));
+      menu.addEventListener("click", (e) => {
+        const li = e.target.closest(".mac-menu__item");
+        if (li) choose(items.indexOf(li));
+      });
+      document.addEventListener("mousedown", (e) => {
+        if (e.target !== select && !menu.contains(e.target)) close();
+      });
+      select.addEventListener("blur", close);
+      addEventListener("resize", close);
+      addEventListener("scroll", (e) => { if (!menu.contains(e.target)) close(); }, true);
+    }
+
+    document.querySelectorAll("select[data-menu-rows]").forEach(initMacMenu);
+
+    // ---------- Portfolio embed: scale the card to the frame ----------
+    const fit = () => document.querySelector(".card").style.setProperty("--s",
+      Math.min(innerHeight / 380, innerWidth / 560) * (400 / 760));
+    fit();
+    addEventListener("resize", fit);
+
+    // ---------- Demo autoplay, only in the portfolio's on-page preview (?preview) ----------
+    // Press "Upgrade to Pro" after 3s, show the success view for 5s, then close it,
+    // which reloads the page and so starts the loop over.
+    if (PREVIEW) (async () => {
+      await wait(3000);
+      form.requestSubmit();
+      const success = document.getElementById("success");
+      while (success.hidden) await wait(100);
+      await wait(5000);
+      document.getElementById("success-close").click();
+    })();
+  </script>
+</body>
+</html>

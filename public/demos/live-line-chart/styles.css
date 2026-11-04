@@ -1,0 +1,289 @@
+@font-face {
+  font-family: "Helvetica Now Display";
+  src: url("fonts/HelveticaNowDisplay-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Now Display";
+  src: url("fonts/HelveticaNowDisplay-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #0e1422;
+  --surface: #222836;
+  --white: #ffffff;
+  --gray-400: #97a3b6;
+  --gray-500: #677489;
+  --success-500: #42d0a1;
+  --stroke: rgba(255, 255, 255, 0.08);
+  --fill-subtle: rgba(255, 255, 255, 0.08);
+  --card-gradient: linear-gradient(to bottom, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.08));
+  --font: "Helvetica Now Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --gutter: 20px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { background: var(--bg); }
+
+body {
+  font-family: var(--font);
+  font-weight: 400;
+  color: var(--white);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+/* Portfolio embed: buttons, tabs and the holding card are static (no click or hover) */
+button, .card.holding { cursor: default; pointer-events: none; }
+a { color: inherit; text-decoration: none; }
+img { display: block; }
+
+/* ---------- Screen ---------- */
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+.scroll {
+  height: 100%;
+  overflow: hidden; /* fixed screen: no scrolling in the portfolio embed */
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* ---------- Typography ---------- */
+.text-14 { font-size: 14px; line-height: 1.25; }
+.text-12 { font-size: 12px; line-height: 1.5; }
+.white { color: var(--white); }
+.muted { color: var(--gray-400); }
+.success { color: var(--success-500); }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Status bar ---------- */
+.status-bar { position: relative; height: 54px; }
+.status-bar > * { position: absolute; }
+.status-time {
+  left: 38px; top: 22px;
+  font-family: "Inter", sans-serif; font-weight: 500;
+  font-size: 16px; line-height: 16px;
+}
+.sb-signal { right: 87px; top: 26.5px; width: 18px; height: 10px; }
+.sb-wifi { right: 66.73px; top: 25px; width: 15.272px; height: 10.965px; }
+.sb-battery { right: 36px; top: 24px; width: 25px; height: 13px; }
+.sb-battery-cap { right: 34.02px; top: 29px; width: 1.328px; height: 4px; }
+.sb-battery-fill { right: 38.5px; top: 26.335px; width: 20.2px; height: 8.33px; }
+/* Battery SVGs export as #0F172A; the design renders them white on dark */
+.sb-battery, .sb-battery-cap, .sb-battery-fill { filter: brightness(0) invert(1); }
+
+/* ---------- Content ---------- */
+.content { padding-bottom: 54px; }
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px var(--gutter) 0;
+}
+
+.nav { display: flex; align-items: center; justify-content: space-between; }
+.nav-actions { display: flex; gap: 8px; }
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 100px;
+  background: var(--fill-subtle);
+  overflow: clip;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+#favBtn[aria-pressed="true"] { background: rgba(66, 208, 161, 0.2); }
+
+.price-row { display: flex; align-items: center; gap: 16px; }
+.price-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+
+.asset-name { display: flex; align-items: center; gap: 6px; }
+.asset-name .text-14 { line-height: 1.5; }
+.asset-logo {
+  position: relative;
+  width: 20px; height: 20px;
+  border-radius: 50px;
+  background: var(--white);
+  flex-shrink: 0;
+}
+.asset-logo img { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.price { font-size: 36px; line-height: 1.2; font-weight: 400; white-space: nowrap; }
+
+.change { display: flex; align-items: center; gap: 4px; }
+.change p { color: var(--success-500); line-height: 1.5; }
+
+.coin {
+  width: 88px; height: 88px; flex-shrink: 0;
+  /* 3s bob = two of the chart's 1.5s pulses, so the coin and the live dot share a beat */
+  animation: coin-float 3s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes coin-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-6px) rotate(-2deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coin { animation: none; }
+}
+
+/* ---------- Timeframes ---------- */
+.timeframes { display: flex; align-items: center; gap: 10px; }
+.tf-group { position: relative; flex: 1 0 0; min-width: 0; display: flex; align-items: center; gap: 8px; }
+
+/* 24px vertical hairline between the chart-type toggle and the periods */
+.tf-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0;
+  height: 24px;
+  flex-shrink: 0;
+}
+.tf-divider img { flex: none; width: 24px; height: 1px; transform: rotate(90deg); }
+
+/* Selected-period pill (Figma 76:935): slides between tabs */
+.tf-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 32px;
+  width: 0;
+  border: 1px solid var(--stroke);
+  background: var(--card-gradient);
+  border-radius: 10px;
+  pointer-events: none;
+}
+.tf-indicator.is-ready {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tf-indicator.is-ready { transition: none; }
+}
+
+.chip {
+  border: 1px solid var(--stroke);
+  background: var(--card-gradient);
+  border-radius: 10px;
+}
+
+.chart-type {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 4px 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+.chart-type-btn {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 10px 4px;
+  border-radius: 100px;
+}
+
+.tf {
+  flex: 1 0 0;
+  min-width: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.25;
+  white-space: nowrap;
+  position: relative;
+}
+
+/* ---------- Chart ---------- */
+.chart {
+  position: relative;
+  height: 176px;
+  margin-top: 20px;
+}
+/* Live chart canvas: plot, guide line and the scrolling time labels */
+.chart-canvas {
+  position: absolute;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+.chart-baseline {
+  position: absolute;
+  left: var(--gutter); top: 151px;
+  width: calc(100% - 2 * var(--gutter)); height: 1px;
+  /* Left end fades out like the chart line and the price guide */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 35%);
+          mask-image: linear-gradient(to right, transparent 0%, #000 35%);
+}
+
+/* ---------- Lists ---------- */
+.lists {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 var(--gutter);
+  margin-top: 24px;
+}
+
+.card {
+  border: 1px solid var(--stroke);
+  background: var(--card-gradient);
+  border-radius: 16px;
+}
+
+.holding {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 64px;
+  padding: 12px 16px;
+}
+.holding-text { flex: 1 0 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+.stats { display: flex; flex-direction: column; gap: 16px; padding: 16px; }
+.stats-title { font-size: 16px; line-height: 1.25; font-weight: 500; }
+.stats-list { display: flex; flex-direction: column; gap: 12px; }
+
+.stat { display: flex; align-items: center; gap: 16px; }
+.stat-label { flex: 1 0 0; min-width: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.stat-value { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; white-space: nowrap; flex-shrink: 0; }
+.stat-change { display: flex; align-items: center; justify-content: center; gap: 4px; }
+
+.divider { width: 100%; height: 1px; }
+
+/* ---------- Home indicator ---------- */
+.home-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 34px;
+  pointer-events: none;
+  z-index: 10;
+}
+.home-indicator img {
+  position: absolute;
+  bottom: 8px;
+  left: calc(50% + 0.5px);
+  transform: translateX(-50%);
+  width: 148px; height: 5px;
+}

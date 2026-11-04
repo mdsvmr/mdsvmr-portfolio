@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Ethereum Details</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="mockup.css" />
+</head>
+<body>
+  <div class="stage">
+    <div class="phone-fit">
+      <div class="phone" aria-label="iPhone 17 Pro Silver">
+        <!-- Device frame, back to front -->
+        <img class="ph-layer ph-buttons" src="assets/mockup/buttons.svg" alt="" />
+        <img class="ph-layer ph-aluminum" src="assets/mockup/aluminum.svg" alt="" />
+        <div class="ph-layer ph-rim"><img src="assets/mockup/rim-shading.svg" alt="" /></div>
+        <img class="ph-layer ph-bezel" src="assets/mockup/bezel.svg" alt="" />
+        <img class="ph-layer ph-corner" src="assets/mockup/corner-shading.svg" alt="" />
+        <div class="ph-layer ph-antenna a1"></div>
+        <div class="ph-layer ph-antenna a2"></div>
+        <div class="ph-layer ph-antenna a3"></div>
+        <div class="ph-layer ph-antenna a4"></div>
+
+        <!-- Screen, on a backing in the app colour so the display's edge blends into the bezel -->
+        <div class="ph-screen-backing"></div>
+        <div class="ph-screen">
+          <div class="screen">
+            <!-- Status Bar -->
+            <div class="status-bar" aria-hidden="true">
+              <span class="status-time">9:41</span>
+              <img class="sb-signal" src="assets/mobile-signal.svg" alt="" />
+              <img class="sb-wifi" src="assets/wifi.svg" alt="" />
+              <img class="sb-battery" src="assets/battery-outline.svg" alt="" />
+              <img class="sb-battery-cap" src="assets/battery-cap.svg" alt="" />
+              <img class="sb-battery-fill" src="assets/battery-fill.svg" alt="" />
+            </div>
+
+            <div class="scroll">
+            <main class="content">
+              <!-- Header -->
+              <section class="header">
+                <nav class="nav">
+                  <button class="icon-btn" tabindex="-1" type="button" aria-label="Back">
+                    <img src="assets/caret-left.svg" alt="" width="16" height="16" />
+                  </button>
+                  <div class="nav-actions">
+                    <button class="icon-btn" tabindex="-1" id="favBtn" type="button" aria-label="Add to watchlist" aria-pressed="false">
+                      <img src="assets/star.svg" alt="" width="16" height="16" />
+                    </button>
+                    <button class="icon-btn" tabindex="-1" type="button" aria-label="More options">
+                      <img src="assets/dots-horizontal.svg" alt="" width="16" height="16" />
+                    </button>
+                  </div>
+                </nav>
+
+                <div class="price-row">
+                  <div class="price-info">
+                    <div class="asset-name">
+                      <span class="asset-logo"><img src="assets/eth-logo.svg" alt="" /></span>
+                      <span class="text-14 ellipsis">Ethereum</span>
+                    </div>
+                    <p class="price" id="livePrice" data-base="3654.29">$3,6<span class="price-num" data-part="whole">54</span>.<span class="price-num" data-part="cents">29</span></p>
+                    <div class="change">
+                      <img src="assets/arrow-up-right.svg" alt="" width="16" height="16" />
+                      <p class="text-14 ellipsis"><span class="white">$328.86</span> (+9.24%)</p>
+                    </div>
+                  </div>
+                  <img class="coin" src="assets/eth-coin@4x.png" alt="Ethereum coin" width="88" height="88" />
+                </div>
+
+                <div class="timeframes" role="tablist">
+                  <div class="chip chart-type">
+                    <button class="chart-type-btn" tabindex="-1" type="button" aria-label="Line chart">
+                      <img src="assets/chart-line.svg" alt="" width="16" height="16" />
+                    </button>
+                    <button class="chart-type-btn" tabindex="-1" type="button" aria-label="Candlestick chart">
+                      <img src="assets/chart-candle.svg" alt="" width="16" height="16" />
+                    </button>
+                  </div>
+                  <span class="tf-divider" aria-hidden="true"><img src="assets/tab-divider.svg" alt="" width="24" height="1" /></span>
+                  <div class="tf-group">
+                    <span class="tf-indicator" aria-hidden="true"></span>
+                    <button class="tf is-active" tabindex="-1" type="button" role="tab" aria-selected="true">1 H</button>
+                    <button class="tf" tabindex="-1" type="button" role="tab">1 D</button>
+                    <button class="tf" tabindex="-1" type="button" role="tab">1 W</button>
+                    <button class="tf" tabindex="-1" type="button" role="tab">1M</button>
+                    <button class="tf" tabindex="-1" type="button" role="tab">YTD</button>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Chart -->
+              <section class="chart" aria-label="Price chart">
+                <canvas class="chart-canvas" id="priceChart" data-seed="assets/chart-stroke.svg"></canvas>
+                <img class="chart-baseline" src="assets/chart-baseline.svg" alt="" />
+              </section>
+
+              <!-- Lists -->
+              <section class="lists">
+                <a class="card holding" href="#" tabindex="-1">
+                  <span class="icon-btn holding-icon"><img src="assets/safe.svg" alt="" width="16" height="16" /></span>
+                  <span class="holding-text">
+                    <span class="text-14 white">Ethereum</span>
+                    <span class="text-12 muted ellipsis">0.0045ETH</span>
+                  </span>
+                  <img src="assets/caret-right.svg" alt="" width="16" height="16" />
+                </a>
+
+                <div class="card stats">
+                  <h2 class="stats-title">Key stats</h2>
+                  <div class="stats-list">
+                    <img class="divider" src="assets/divider.svg" alt="" />
+                    <div class="stat">
+                      <div class="stat-label"><img src="assets/chart-line-up.svg" alt="" width="16" height="16" /><span class="text-14">Market cap</span></div>
+                      <div class="stat-value"><span class="text-14">$250.5B</span><span class="text-12 muted ellipsis">8.38% dominance</span></div>
+                    </div>
+                    <img class="divider" src="assets/divider.svg" alt="" />
+                    <div class="stat">
+                      <div class="stat-label"><img src="assets/clock.svg" alt="" width="16" height="16" /><span class="text-14">24H volume</span></div>
+                      <div class="stat-value">
+                        <span class="text-14">$11.8B</span>
+                        <span class="stat-change"><img src="assets/arrow-up-right-sm.svg" alt="" width="12" height="12" /><span class="text-12 success ellipsis">0.02%</span></span>
+                      </div>
+                    </div>
+                    <img class="divider" src="assets/divider.svg" alt="" />
+                    <div class="stat">
+                      <div class="stat-label"><img src="assets/coins-swap.svg" alt="" width="16" height="16" /><span class="text-14">Circulating supply</span></div>
+                      <div class="stat-value"><span class="text-14">120.6M</span><span class="text-12 muted ellipsis">max supply</span></div>
+                    </div>
+                    <img class="divider" src="assets/divider.svg" alt="" />
+                    <div class="stat">
+                      <div class="stat-label"><img src="assets/rocket.svg" alt="" width="16" height="16" /><span class="text-14">All-time high</span></div>
+                      <div class="stat-value"><span class="text-14">$4,878</span><span class="text-12 muted ellipsis">Nov 2021</span></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </main>
+            </div>
+
+            <!-- iOS home indicator floats over the content -->
+            <div class="home-indicator"><img src="assets/home-indicator.svg" alt="" /></div>
+          </div>
+        </div>
+
+        <!-- Dynamic Island + camera -->
+        <div class="ph-island"></div>
+        <div class="ph-cam c1"><div class="ph-cam-inner"><div class="ph-cam-mask"><div class="ph-cam-bleed"><img src="assets/mockup/camera-oval-2a.svg" alt="" /></div></div></div></div>
+        <div class="ph-cam c2"><div class="ph-cam-inner"><div class="ph-cam-mask"><img src="assets/mockup/camera-oval-2b.svg" alt="" /></div></div></div>
+        <div class="ph-cam c3"><div class="ph-cam-inner"><div class="ph-cam-mask"><img src="assets/mockup/camera-oval-a.svg" alt="" /></div></div></div>
+        <div class="ph-cam c4"><div class="ph-cam-inner"><div class="ph-cam-mask"><img src="assets/mockup/camera-oval-b.svg" alt="" /></div></div></div>
+        <div class="ph-layer ph-speaker"><img src="assets/mockup/speaker-cutout.svg" alt="" /></div>
+
+        <!-- Button reflections -->
+        <div class="ph-layer ph-reflect ph-vol-down"></div>
+        <div class="ph-layer ph-reflect ph-vol-up"></div>
+        <div class="ph-layer ph-reflect ph-action"></div>
+        <div class="ph-layer ph-power"><img src="assets/mockup/power.svg" alt="" /></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Period tabs: the highlight pill sits under the active period (tabs are static here)
+    const indicator = document.querySelector('.tf-indicator');
+    const moveIndicator = (tab) => {
+      indicator.style.width = `${tab.offsetWidth}px`;
+      indicator.style.transform = `translateX(${tab.offsetLeft}px)`;
+    };
+    moveIndicator(document.querySelector('.tf.is-active'));
+    document.fonts.ready.then(() => moveIndicator(document.querySelector('.tf.is-active')));
+    requestAnimationFrame(() => indicator.classList.add('is-ready'));
+  </script>
+  <script src="chart.js"></script>
+  <script>
+    // Device is 200px wide in a 380px-tall frame (439px in Figma) and scales with the frame height
+    const PHONE_SCALE = 200 / 439;
+    const fit = () => {
+      if (!window.innerHeight) return; // hidden/zero-size viewport: keep the last scale
+      document.documentElement.style.setProperty('--phone-scale', (window.innerHeight / 380) * PHONE_SCALE);
+    };
+    fit();
+    window.addEventListener('resize', fit);
+  </script>
+</body>
+</html>
