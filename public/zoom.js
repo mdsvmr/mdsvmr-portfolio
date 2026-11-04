@@ -2,8 +2,8 @@
 // The clicked media is cloned at its final (centered) size and animated from its
 // on-page position with a FLIP transform, so it stays crisp once open.
 // While zoomed, the left/right half of the media (or the arrow keys) steps to the
-// previous/next media on the page, looping at either end. A zoomed live demo can be
-// used instead (its clicks stay inside it), so only the arrow keys step past it.
+// previous/next media on the page, looping at either end. A zoomed live demo is used
+// instead (its clicks and arrow keys stay with it); Escape or a click outside closes it.
 (function () {
   var SELECTOR = ".showcase, .work__image, .moments__image";
   var MAX_HEIGHT = 600;
@@ -116,8 +116,8 @@
     });
   }
 
-  // A zoomed demo starts fresh: wait (briefly) for it to load, and pass its arrow and
-  // Escape keys on to the zoom, since key presses inside it never reach this page.
+  // A zoomed demo starts fresh: wait (briefly) for it to load, and pass its Escape key on
+  // to the zoom, since key presses inside it never reach this page.
   function demoReady(frame) {
     return new Promise(function (resolve) {
       var finished = false;
@@ -129,6 +129,32 @@
       };
       frame.addEventListener("load", done, { once: true });
       setTimeout(done, 1000);
+    });
+  }
+
+  // Leaving the zoom starts every on-page demo over from the beginning (frames that haven't
+  // loaded yet are left to load on their own). Each frame is hidden while it reloads and
+  // fades back in once loaded, so the jump back to the start is never seen.
+  function restartDemos() {
+    items().forEach(function (el) {
+      var frame = demoFrame(el);
+      if (!frame) return;
+      try {
+        if (frame.contentWindow.location.href === "about:blank") return;
+      } catch (e) {}
+      frame.style.transition = "none";
+      frame.style.opacity = "0";
+      frame.addEventListener("load", function () {
+        requestAnimationFrame(function () {
+          frame.style.transition = "";
+          frame.style.opacity = "";
+        });
+      }, { once: true });
+      try {
+        frame.contentWindow.location.reload();
+      } catch (e) {
+        frame.src = frame.getAttribute("src");
+      }
     });
   }
 
@@ -237,6 +263,7 @@
     if (!state || state.closing) return;
     state.closing = true;
     var s = state;
+    restartDemos();
     // Bring the scrollbar back before measuring where the media returns to.
     document.documentElement.classList.remove("is-zoomed");
 
@@ -274,7 +301,11 @@
       if (cleaned) return;
       cleaned = true;
       s.source.style.visibility = "";
-      document.querySelectorAll(".zoom-media").forEach(function (el) { el.remove(); });
+      document.querySelectorAll(".zoom-media").forEach(function (el) {
+        if (!demoFrame(el) || reduceMotion.matches) return el.remove();
+        el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "ease-out", fill: "forwards" });
+        setTimeout(function () { el.remove(); }, 250);
+      });
       s.overlay.remove();
       if (state === s) state = null;
       if (s.source.focus) s.source.focus({ preventScroll: true });
@@ -312,7 +343,7 @@
   function onKey(e) {
     if (!state) return;
     if (e.key === "Escape") close();
-    else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !demoFrame(state.clone)) {
       e.preventDefault();
       step(e.key === "ArrowLeft" ? -1 : 1);
     }

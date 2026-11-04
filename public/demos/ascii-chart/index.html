@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Design tokens dari Figma */
+    --black-background: #0f1a1e;
+    --primary-main: #2fb7a5;
+    --white-100: #ffffff;
+    --white-48: rgba(255, 255, 255, 0.48);
+    --white-32: rgba(255, 255, 255, 0.32);
+    --white-8: rgba(255, 255, 255, 0.08);
+    --white-4: rgba(255, 255, 255, 0.04);
+    --radius-8: 8px;
+    --radius-6: 6px;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --grow-duration: 500ms;             /* chart tumbuh 0,5 dtk + ASCII hilang 0,5 dtk = total 1 detik */
+    --ascii-fade: 500ms;                /* ASCII menghilang dari bawah ke atas setelah chart penuh */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Portfolio embed: the icon and panel keep their design size and are scaled (--s) to fit
+     the frame, the open panel 440px wide in the 560×380 Index box. */
+  body {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f5f6;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Morph container: icon (120x120) <-> chart component, membesar/mengecil dari tengah */
+  .morph {
+    position: relative;
+    flex: none;
+    width: 100px;                       /* icon 100x100; radius 23.765px sesuai Figma (node 41:6823) */
+    height: 100px;
+    border-radius: 23.765px;
+    overflow: hidden;
+    isolation: isolate;
+    transform: scale(var(--s, 1));
+  }
+  .morph.is-open { border-radius: var(--radius-8); }
+  /* Latar solid selama transisi: icon memudar di atasnya, konten chart muncul di atasnya -> tidak pernah kosong */
+  .morph.is-open, .morph.is-animating { background: var(--black-background); }
+
+  /* Icon (Figma node 34:6742) */
+  .icon-face {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    isolation: isolate;
+    background: var(--primary-main);   /* solid; kilau cahaya kini hanya muncul saat hover */
+    z-index: 2;
+  }
+  .icon-face:focus-visible { outline: 2px solid var(--primary-main); outline-offset: -4px; border-radius: 23.765px; }
+  .icon-coin {
+    position: absolute;
+    left: calc(50% + 0.73px);
+    top: calc(50% + 0.73px);
+    width: 114.689px;
+    height: 114.689px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: luminosity;
+    pointer-events: none;
+  }
+  .icon-coin img {
+    display: block;
+    width: 90.559px;
+    height: 90.559px;
+    object-fit: cover;
+    transform: rotate(18.58deg);
+  }
+  /* Hover icon: tilt 3D + kilau cahaya putih mengikuti kursor (referensi kartu holographic) */
+  .icon-glow,
+  .icon-rings {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--shine, 0);
+  }
+  /* Kilau: satu oval lembut (pusat 60%) yang mengikuti kursor */
+  .icon-glow {
+    /* Lebih menyebar: area terang lebar & datar, turun perlahan -> tidak ada titik putih di tengah */
+    background: radial-gradient(ellipse 90% 66% at var(--mx, 50%) var(--my, 50%),
+      rgba(240, 255, 252, 0.42) 0%,
+      rgba(225, 251, 246, 0.36) 25%,
+      rgba(205, 245, 238, 0.2) 55%,
+      rgba(151, 225, 215, 0.06) 80%,
+      rgba(151, 225, 215, 0) 100%);
+    mix-blend-mode: screen;
+  }
+  .icon-rings {
+    background: repeating-radial-gradient(circle at var(--rx, 50%) var(--ry, 50%),
+      rgba(255, 255, 255, 0.32) 0 1px,
+      rgba(255, 255, 255, 0) 1px 5px);
+    -webkit-mask-image: radial-gradient(ellipse 90% 66% at var(--mx, 50%) var(--my, 50%), #000 0%, transparent 100%);
+    mask-image: radial-gradient(ellipse 90% 66% at var(--mx, 50%) var(--my, 50%), #000 0%, transparent 100%);
+    mix-blend-mode: overlay;
+  }
+
+  .morph.is-open .icon-face { visibility: hidden; pointer-events: none; }
+  .morph:not(.is-open):not(.is-animating) .chart-box { visibility: hidden; }
+  .morph:not(.is-open) .chart-box { pointer-events: none; }
+
+  /* Typography (Body/Medium & Body/Small) */
+  .text-md-medium { font-size: 14px; font-weight: 500; line-height: 20px; letter-spacing: -0.14px; }
+  .text-md-regular { font-size: 14px; font-weight: 400; line-height: 20px; letter-spacing: -0.14px; }
+  .text-sm-regular { font-size: 12px; font-weight: 400; line-height: 16px; letter-spacing: -0.12px; }
+
+  /* Chart Box */
+  .chart-box {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--panel-w, 1108px);
+    height: 480px;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 20px 48px;
+    background: var(--black-background);
+    border-radius: var(--radius-8);
+    overflow: hidden;
+    color: var(--white-100);
+  }
+
+  .chart-title { white-space: nowrap; }
+
+  /* Icon x-close di pojok kanan atas (posisi sesuai Figma: top 20, right 20, 20x20) */
+  .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+  /* Warna & hover sama seperti option tab period: putih 32% -> 48% saat hover, transisi 0.15s.
+     Asset stroke-nya putih 48%, jadi opacity 0.667 = 32% dan 1 = 48%. */
+  .close-btn img { display: block; opacity: 0.667; transition: opacity 0.15s ease; }
+  .close-btn:hover img { opacity: 1; }
+  .close-btn:focus-visible { outline: 1px solid var(--primary-main); outline-offset: 2px; border-radius: 4px; }
+
+  /* Header */
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .stats { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 16px;
+    white-space: nowrap;
+  }
+  .stat-label { color: var(--white-48); }
+  .stat:nth-child(1) { width: 85px; }
+  .stat:nth-child(2) { width: 104px; }
+  .stat:nth-child(3) { width: 103px; }
+  .stat:nth-child(4) { width: 82px; }
+  .stat-value { overflow: hidden; text-overflow: ellipsis; }
+  .stat-value.is-positive { color: var(--primary-main); }
+
+  .controls { display: flex; align-items: center; gap: 8px; }
+
+  .segmented {
+    display: flex;
+    align-items: flex-start;
+    height: 32px;
+    padding: 0 2px;
+    background: var(--white-4);
+    border: 1px solid var(--white-8);
+    border-radius: var(--radius-6);
+  }
+
+  .segmented button {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: -0.14px;
+    color: var(--white-32);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+  .segmented button:hover { color: var(--white-48); }
+  .segmented button[aria-pressed="true"] { color: var(--white-100); font-weight: 500; }
+  .segmented button:focus-visible { outline: 1px solid var(--primary-main); outline-offset: -2px; border-radius: 4px; }
+  /* Account Value / PnL is static in the portfolio embed */
+  .segmented.is-static button { cursor: default; pointer-events: none; }
+
+  /* Plot area */
+  .plot {
+    position: relative;
+    flex-shrink: 0;                     /* konten 489px > box 480px: jangan tekan plot, cukup potong padding bawah (seperti Figma) */
+    width: 100%;
+    height: 321px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .h-row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+
+  .h-line { position: relative; flex: 1 0 0; min-width: 1px; height: 0; }
+  .h-line img { position: absolute; inset: -1px 0 0 0; display: block; max-width: none; width: 100%; height: 1px; }
+
+  .y-label { flex-shrink: 0; width: 40px; text-align: right; color: var(--white-32); }
+
+  .vertical {
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: calc(100% - 48px);
+    height: 332px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .v-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: 100%;
+  }
+
+  .v-line { position: relative; flex: 1 0 0; width: 40px; min-height: 1px; }
+  .v-line img {
+    position: absolute;
+    top: 0;
+    left: calc(50% + 1px);
+    display: block;
+    max-width: none;
+    transform: rotate(90deg);
+    transform-origin: 0 0;
+  }
+
+  .x-label { width: 40px; text-align: center; color: var(--white-32); }
+
+  /* Line + area chart (asset Figma) */
+  .indicators {
+    position: absolute;
+    left: 0;
+    top: 72px;
+    width: calc(100% - 68px);
+    height: 240px;
+  }
+  .indicators {
+    transform-origin: 50% 100%;
+    transform: scaleY(0);
+    opacity: 0;
+    transition: transform 700ms var(--ease-out), opacity 200ms ease 500ms;
+  }
+  .chart-box.is-hovered .indicators {
+    transform: scaleY(1);
+    opacity: 1;
+    transition: transform var(--grow-duration) var(--ease-out), opacity 150ms ease;
+  }
+  .indicators img { position: absolute; inset: -0.42% 0 0 0; display: block; max-width: none; width: 100%; height: calc(100% + 0.42%); }
+
+  /* Efek ASCII selama chart terbentuk: SVG disembunyikan, canvas menggambar versi ASCII-nya */
+  .chart-box.is-ascii .indicators img { opacity: 0; transition: none; }
+  .ascii-canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--ascii-fade) ease;
+    z-index: 1;
+  }
+  .ascii-canvas.is-visible { opacity: 1; transition: none; }
+
+  /* Lingkaran ASCII yang mengikuti kursor */
+  .cursor-canvas { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; }
+
+  /* State default: garis datar di baris 3,100 */
+  .baseline {
+    position: absolute;
+    left: 0;
+    top: 313px;
+    width: calc(100% - 68px);           /* berhenti tepat di garis vertikal 12.00 */
+    height: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease 450ms;
+  }
+  .baseline img { position: absolute; inset: -2px 0 0 0; display: block; max-width: none; width: 100%; height: 2px; }
+  .chart-box.is-hovered .baseline { opacity: 0; transition: opacity 200ms ease; }
+  .chart-box.is-shrinking .baseline { opacity: 0; transition: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .indicators, .baseline,
+    .chart-box.is-hovered .indicators,
+    .chart-box.is-hovered .baseline { transition: none; }
+  }
+
+  /* Hover crosshair (garis dotted + label sumbu) */
+  .hover-layer { position: absolute; left: 0; top: 0; height: 320px; width: calc(100% - 68px); cursor: crosshair; z-index: 3; }
+
+  .price-box {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    height: 20px;
+    padding: 0 4px;
+    background: var(--primary-main);
+    border-radius: 4px;
+    color: var(--black-background);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 16px;
+    letter-spacing: -0.12px;
+    white-space: nowrap;
+  }
+
+  .crosshair-x {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 2;
+  }
+  .crosshair-x .line { position: relative; flex: 1 0 0; min-width: 1px; height: 0; }
+  .crosshair-x .line img { position: absolute; inset: -0.5px 0; display: block; max-width: none; width: 100%; height: 1px; }
+
+  .crosshair-y {
+    position: absolute;
+    top: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 2;
+  }
+  .crosshair-y .line { position: relative; width: 1px; height: 312px; }
+  .crosshair-y .line img {
+    position: absolute;
+    top: 0;
+    left: 1px;
+    display: block;
+    max-width: none;
+    transform: rotate(90deg);
+    transform-origin: 0 0;
+  }
+  .crosshair-y .price-box { position: absolute; top: 312px; }
+
+  .hover-layer.is-active ~ .crosshair-x,
+  .hover-layer.is-active ~ .crosshair-y { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="morph" id="morph">
+<button type="button" class="icon-face" id="iconFace" aria-label="Open performance chart" aria-expanded="false">
+  <span class="icon-coin"><img alt="" src="assets/ethereum-coin.png" width="90.559" height="90.559"></span>
+  <span class="icon-rings"></span>
+  <span class="icon-glow"></span>
+</button>
+
+<section class="chart-box" aria-label="Performance chart" style="opacity: 0; filter: blur(12px); transform: translate(-50%, -50%) scale(0.96);">
+  <h2 class="chart-title text-md-medium">Performance</h2>
+  <button type="button" class="close-btn" aria-label="Close"><img alt="" src="assets/x-close.svg" width="20" height="20"></button>
+
+  <div class="chart-header">
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-label text-sm-regular">PnL</span>
+        <span class="stat-value is-positive text-md-medium" data-count="9464.63" data-prefix="$">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label text-sm-regular">Volume</span>
+        <span class="stat-value text-md-medium" data-count="199464.63" data-prefix="$">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label text-sm-regular">Max Drawdown</span>
+        <span class="stat-value text-md-medium" data-count="98.07" data-suffix="%">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label text-sm-regular">Total Equity</span>
+        <span class="stat-value text-md-medium" data-count="0.17" data-prefix="$">0</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="segmented is-static" role="group" aria-label="Metric">
+        <button type="button" aria-pressed="true" tabindex="-1">Account Value</button>
+        <button type="button" aria-pressed="false" tabindex="-1">PnL</button>
+      </div>
+      <div class="segmented" role="group" aria-label="Range" data-segmented id="periodTabs">
+        <button type="button" aria-pressed="true" data-period="24h">24h</button>
+        <button type="button" aria-pressed="false" data-period="7d">7D</button>
+        <button type="button" aria-pressed="false" data-period="30d">30D</button>
+        <button type="button" aria-pressed="false" data-period="all">all time</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="plot" id="plot">
+    <!-- Y axis rows -->
+    <div class="h-row"><div class="h-line"><img alt="" src="assets/grid-line-horizontal.svg" width="1020" height="1"></div><span class="y-label text-sm-regular">3,600</span></div>
+    <div class="h-row"><div class="h-line"><img alt="" src="assets/grid-line-horizontal.svg" width="1020" height="1"></div><span class="y-label text-sm-regular">3,500</span></div>
+    <div class="h-row"><div class="h-line"><img alt="" src="assets/grid-line-horizontal.svg" width="1020" height="1"></div><span class="y-label text-sm-regular">3,400</span></div>
+    <div class="h-row"><div class="h-line"><img alt="" src="assets/grid-line-horizontal.svg" width="1020" height="1"></div><span class="y-label text-sm-regular">3,300</span></div>
+    <div class="h-row"><div class="h-line"><img alt="" src="assets/grid-line-horizontal.svg" width="1020" height="1"></div><span class="y-label text-sm-regular">3,200</span></div>
+    <div class="h-row"><div class="h-line"><img alt="" src="assets/grid-line-horizontal.svg" width="1020" height="1"></div><span class="y-label text-sm-regular">3,100</span></div>
+
+    <!-- X axis columns -->
+    <div class="vertical">
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">05.00</span></div>
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">06.00</span></div>
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">07.00</span></div>
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">08.00</span></div>
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">09.00</span></div>
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">10.00</span></div>
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">11.00</span></div>
+      <div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div><span class="x-label text-sm-regular">12.00</span></div>
+    </div>
+
+    <!-- Line + gradient area -->
+    <div class="baseline">
+      <img alt="" src="assets/baseline-flat.svg" width="1020" height="2">
+    </div>
+
+    <div class="indicators">
+      <img id="indicatorImg" alt="Account value over the last 24 hours" src="assets/indicators.svg" width="1000.52" height="241">
+    </div>
+    <canvas class="ascii-canvas" id="asciiCanvas" aria-hidden="true"></canvas>
+    <canvas class="cursor-canvas" id="cursorCanvas" aria-hidden="true"></canvas>
+
+    <div class="hover-layer" id="hoverLayer"></div>
+    <div class="crosshair-x" id="crosshairX">
+      <div class="line"><img alt="" src="assets/crosshair-line-horizontal.svg" width="1026" height="1"></div>
+      <span class="price-box" id="valueLabel">3,350</span>
+    </div>
+    <div class="crosshair-y" id="crosshairY">
+      <div class="line"><img alt="" src="assets/crosshair-line-vertical.svg" width="312" height="1"></div>
+      <span class="price-box" id="timeLabel">Feb 4, 07.30</span>
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+  // Segmented controls
+  document.querySelectorAll('[data-segmented]').forEach((group) => {
+    group.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      group.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    });
+  });
+
+  // State default <-> hover: angka count-up/down dan chart naik dari garis datar.
+  const chartBox = document.querySelector('.chart-box');
+  const counters = [...document.querySelectorAll('[data-count]')];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+  const fmtNumber = (v) => v.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Durasi diambil dari CSS supaya angka & chart selalu selesai bersamaan
+  const cssMs = (name) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+  const GROW_MS = cssMs('--grow-duration');
+
+  let progress = 0;   // 0 = state default, 1 = nilai penuh
+  let rafId = null;
+
+  // ---- Data per period: label sumbu X, nilai statistik, bentuk chart & label waktu crosshair ----
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const hhmm = (h) => { const m = Math.round(h * 60); return pad2(Math.floor(m / 60) % 24) + '.' + pad2(m % 60); };
+  const bump = (f, at, width) => Math.exp(-(((f - at) / width) ** 2));
+  const step = (f, at, width) => 1 / (1 + Math.exp(-(f - at) / width));   // lonjakan naik tajam
+
+  const PERIODS = {
+    '24h': {
+      labels: ['05.00', '06.00', '07.00', '08.00', '09.00', '10.00', '11.00', '12.00'],
+      yAxis: [3600, 100],                // 3,600 -> 3,100 (rentang sempit untuk 1 hari)
+      stats: [9464.63, 199464.63, 98.07, 0.17],
+      src: 'assets/indicators.svg',      // bentuk asli dari Figma
+      points: null,                      // diisi dari asset (lihat modul ascii)
+      alt: 'Account value over the last 24 hours',
+      time: (f) => `Feb 4, ${hhmm(5 + 7 * f)}`,
+    },
+    '7d': {
+      labels: ['2', '3', '4', '5', '6', '7', '8'],
+      yAxis: [3800, 200],                // 3,800 -> 2,800
+      stats: [2184.37, 642180.25, 64.32, 1.42],
+      seed: 7,
+      curve: (f) => 0.28 + 0.42 * f + 0.08 * Math.sin(f * Math.PI * 4) - 0.22 * bump(f, 0.55, 0.07),
+      alt: 'Account value over the last 7 days',
+      time: (f) => { const d = 2 + 6 * f; return `Feb ${Math.floor(d)}, ${hhmm((d % 1) * 24)}`; },
+    },
+    '30d': {
+      labels: ['1', '5', '9', '13', '18', '22', '26', '30'],
+      yAxis: [4000, 300],                // 4,000 -> 2,500
+      stats: [5736.92, 874215.4, 41.86, 6.85],
+      seed: 30,
+      // Lembah besar + 4 lonjakan tajam: turun tiba-tiba, naik tajam, turun sesaat, naik tajam lagi
+      curve: (f) => 0.52 - 0.4 * Math.sin(f * Math.PI)
+        - 0.18 * bump(f, 0.22, 0.015)
+        + 0.2 * step(f, 0.47, 0.006)
+        - 0.15 * bump(f, 0.63, 0.012)
+        + 0.17 * step(f, 0.8, 0.006),
+      alt: 'Account value over the last 30 days',
+      time: (f) => `Jan ${Math.round(1 + 29 * f)}`,
+    },
+    all: {
+      labels: ['Jan', 'Mar', 'May', 'Jul', 'Aug', 'Oct', 'Dec'],
+      yAxis: [6000, 1000],               // 6,000 -> 1,000 (rentang lebar untuk sepanjang waktu)
+      stats: [9981.04, 986502.77, 22.15, 9.48],
+      seed: 365,
+      curve: (f) => 0.08 + 0.78 * Math.pow(f, 1.5) + 0.06 * Math.sin(f * Math.PI * 6) - 0.18 * bump(f, 0.7, 0.05),
+      alt: 'Account value over all time',
+      time: (f) => { const m = Math.min(11, 11 * f); return `${MONTHS[Math.floor(m)]} ${1 + Math.floor((m % 1) * 28)}`; },
+    },
+  };
+  let currentPeriod = '24h';
+
+  // Titik garis dalam koordinat viewBox yang sama dengan indicators.svg (1000.52 x 241)
+  function generatePoints(curve, seed) {
+    let a = seed >>> 0;
+    const rand = () => {                 // PRNG deterministik: bentuk chart selalu sama tiap dibuka
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const N = 292, pts = [];
+    let noise = 0;
+    for (let i = 0; i < N; i++) {
+      const f = i / (N - 1);
+      noise = noise * 0.9 + (rand() - 0.5) * 0.05;
+      const v = Math.min(0.97, Math.max(0.03, curve(f) + noise + (rand() - 0.5) * 0.012));
+      pts.push([0.21 + f * 1000, 230 - v * 220]);
+    }
+    return pts;
+  }
+
+  // SVG dengan style yang sama persis seperti asset Figma (garis 2px + gradient isi)
+  function svgFromPoints(pts) {
+    const line = pts.map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2)).join('');
+    const lastX = pts[pts.length - 1][0].toFixed(2);
+    const svg = `<svg width="1000.52" height="241" viewBox="0 0 1000.52 241" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">`
+      + `<path d="${line}L${lastX} 241L0.21 241Z" fill="url(#g)"/>`
+      + `<path d="${line}" stroke="#2FB7A5" stroke-width="2" stroke-linejoin="round"/>`
+      + `<defs><linearGradient id="g" x1="500.213" y1="1" x2="500.213" y2="241" gradientUnits="userSpaceOnUse">`
+      + `<stop stop-color="#2FB7A5" stop-opacity="0.16"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient></defs></svg>`;
+    return URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+  }
+
+  function animateCounters(to, duration) {
+    cancelAnimationFrame(rafId);
+    const from = progress;
+    duration *= Math.abs(to - from);
+    if (reduceMotion || duration === 0) { progress = to; renderCounters(to); return; }
+
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, Math.max(0, (now - start) / duration));
+      progress = from + (to - from) * easeOutCubic(t);
+      renderCounters(t === 1 ? to : progress);
+      if (t < 1) rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function renderCounters(p) {
+    counters.forEach((el) => {
+      if (p === 0) { el.textContent = '0'; return; }
+      const v = parseFloat(el.dataset.count) * p;
+      el.textContent = (el.dataset.prefix || '') + fmtNumber(v) + (el.dataset.suffix || '');
+    });
+  }
+
+  function setHovered(on) {
+    chartBox.classList.toggle('is-hovered', on);
+    if (on) ascii.start(); else ascii.shrink();
+    animateCounters(on ? 1 : 0, on ? GROW_MS : 500);
+  }
+
+  // Efek ASCII (referensi: grid titik + karakter teracak yang makin stabil).
+  // Berjalan hanya saat chart tumbuh dari garis datar, dan berhenti begitu chart selesai terbentuk.
+  const ascii = (() => {
+    const indicators = document.querySelector('.indicators');
+    const baseline = document.querySelector('.baseline');
+    const canvas = document.getElementById('asciiCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const CELL_W = 7, CELL_H = 11, PAD_TOP = 4;
+    const BASE_Y = 312;                 // dasar chart (baris 3,100) dalam koordinat plot
+    const LINE_TOP = 71;                // posisi y=0 viewBox indicators.svg dalam plot
+    const VB_W = 1000.52;
+    const FILL_RAMP = '.:-=+x36X0#';
+    const PRIMARY = '#2fb7a5';
+
+    let points = null;                  // titik garis dari asset indicators.svg
+    let lineFull, seeds, cols, rows, w, h, cellW;
+    let running = false, raf = null, fadeTimer = null, lastScramble = 0;
+    let mode = 'grow';                  // 'grow' = default -> chart (ASCII), 'dissolve' = ASCII hilang bawah -> atas, 'shrink' = chart -> garis datar (solid)
+    let dissolveStart = 0, minLineY = 0, jitter = null;
+
+    fetch('assets/indicators.svg')
+      .then((r) => r.text())
+      .then((svg) => {
+        const d = new DOMParser().parseFromString(svg, 'image/svg+xml').getElementById('Vector_2').getAttribute('d');
+        const pts = [...d.matchAll(/(-?[\d.]+)[ ,](-?[\d.]+)/g)].map((m) => [+m[1], +m[2]]).sort((a, b) => a[0] - b[0]);
+        PERIODS['24h'].points = pts;
+        if (currentPeriod === '24h') { points = pts; lineFull = null; }
+      })
+      .catch(() => {});                 // mis. dibuka via file:// -> transisi tetap jalan tanpa efek ASCII
+
+    const lineYAt = (vx) => {
+      let i = points.findIndex((p) => p[0] >= vx);
+      if (i <= 0) i = 1;
+      const [x1, y1] = points[i - 1], [x2, y2] = points[i];
+      return y1 + ((y2 - y1) * (vx - x1)) / (x2 - x1 || 1);
+    };
+
+    // Skala chart saat ini dibaca dari transisi CSS, jadi ASCII selalu sinkron dengan bentuk chart
+    const currentScale = () => {
+      const m = getComputedStyle(indicators).transform;
+      if (!m || m === 'none') return 1;
+      return parseFloat(m.slice(m.indexOf('(') + 1).split(',')[3]);
+    };
+
+    function setup() {
+      const dpr = window.devicePixelRatio || 1;
+      w = indicators.offsetWidth;
+      h = BASE_Y + CELL_H;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.font = '500 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Kolom dibulatkan ke atas lalu dirapatkan sedikit, agar ASCII penuh sampai garis 12.00 tanpa melewatinya
+      cols = Math.ceil(w / CELL_W);
+      cellW = w / cols;
+      rows = Math.floor((h - PAD_TOP) / CELL_H);
+      lineFull = new Float32Array(cols);
+      jitter = Float32Array.from({ length: cols * rows }, Math.random);   // urutan hilang acak per karakter
+      for (let c = 0; c < cols; c++) lineFull[c] = LINE_TOP + lineYAt((((c + 0.5) * cellW) / w) * VB_W);
+      seeds = Float32Array.from({ length: cols * rows }, Math.random);
+      minLineY = Math.min(...lineFull);
+    }
+
+    function draw(now) {
+      const s = currentScale();
+      // Makin dekat ke bentuk akhir, makin sedikit karakter yang teracak (terlihat "mengunci")
+      const scramble = now - lastScramble > 45;
+      if (scramble) lastScramble = now;
+      const churn = 0.12 + 0.6 * (1 - s);
+
+      // Fase dissolve: garis batas naik dari dasar (3,100) ke puncak chart; karakter di bawahnya hilang
+      let sweep = -1;
+      if (mode === 'dissolve') {
+        const t = Math.min(1, (now - dissolveStart) / cssMs('--ascii-fade'));
+        if (t >= 1) {
+          ctx.clearRect(0, 0, w, h);
+          canvas.classList.remove('is-visible');
+          raf = null;
+          return;
+        }
+        sweep = t * t * (3 - 2 * t) * 1.25;           // smoothstep; >1 agar karakter teratas juga sempat hilang
+      }
+
+      ctx.clearRect(0, 0, w, h);
+      const linePath = () => {
+        ctx.beginPath();
+        points.forEach(([vx, vy], i) => {
+          const px = (vx / VB_W) * w;
+          const py = BASE_Y - (BASE_Y - (LINE_TOP + vy)) * s;
+          i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+        });
+      };
+
+      if (mode === 'shrink') {
+        // Chart -> garis datar: garis tetap solid 2px & utuh, gradient isi ikut menyusut
+        const top = BASE_Y - (BASE_Y - (LINE_TOP + 1)) * s;
+        const grad = ctx.createLinearGradient(0, top, 0, BASE_Y);
+        grad.addColorStop(0, 'rgba(47, 183, 165, 0.16)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        linePath();
+        ctx.lineTo(w, BASE_Y);
+        ctx.lineTo(0, BASE_Y);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = PRIMARY;
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        linePath();
+        ctx.stroke();
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+
+      for (let c = 0; c < cols; c++) {
+        const x = (c + 0.5) * cellW;
+        const yLine = BASE_Y - (BASE_Y - lineFull[c]) * s;
+        const depth = Math.max(BASE_Y - yLine, 1);
+
+        for (let r = 0; r < rows; r++) {
+          const i = r * cols + c;
+          if (scramble && Math.random() < churn) seeds[i] = Math.random();
+          const seed = seeds[i];
+          const y = PAD_TOP + (r + 0.5) * CELL_H;
+          const dist = y - yLine;
+
+          // ASCII hanya di area isi chart (di bawah garis, di atas dasar 3,100)
+          if (dist > 3 && y <= BASE_Y) {
+            const density = 1 - dist / depth;                 // padat dekat garis, tipis ke bawah (seperti gradient)
+            const level = Math.min(0.999, Math.max(0, 0.2 + density * 0.75 + (seed - 0.5) * 0.4));
+            let fade = 1;
+            if (sweep >= 0) {
+              // Waktu hilang tiap karakter: 0 di dasar -> 1 di puncak chart (bawah ke atas), plus acak agar tepinya tidak lurus
+              const vanish = (BASE_Y - y) / (BASE_Y - minLineY) + (jitter[i] - 0.5) * 0.25;
+              fade = Math.min(1, Math.max(0, (vanish - sweep) / 0.12 + 1));
+              if (fade === 0) continue;
+            }
+            ctx.globalAlpha = (0.3 + 0.6 * density) * fade;
+            ctx.fillStyle = PRIMARY;
+            ctx.fillText(FILL_RAMP[(level * FILL_RAMP.length) | 0], x, y);
+          }
+        }
+      }
+
+      // Saat dissolve, garis & gradient asli (SVG) sudah tampil di bawah canvas -> tidak perlu digambar ulang
+      if (mode === 'dissolve') { ctx.globalAlpha = 1; raf = requestAnimationFrame(draw); return; }
+
+      // Garis chart muncul bertahap: opacity 0 saat awal hover -> 100% saat chart terbentuk penuh
+      ctx.globalAlpha = Math.min(1, Math.max(0, s));
+      ctx.strokeStyle = PRIMARY;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      linePath();
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      raf = requestAnimationFrame(draw);
+    }
+
+    function finish(e) {
+      if (e.propertyName !== 'transform' || !running) return;
+      running = false;
+
+      if (mode === 'shrink') {
+        // Garis canvas sudah datar -> serahkan langsung ke garis default tanpa jeda/fade
+        baseline.style.transition = 'none';
+        chartBox.classList.remove('is-shrinking', 'is-ascii');
+        canvas.style.transition = 'none';
+        canvas.classList.remove('is-visible');
+        cancelAnimationFrame(raf);
+        ctx.clearRect(0, 0, w, h);
+        void baseline.offsetWidth;
+        baseline.style.transition = '';
+        canvas.style.transition = '';
+        return;
+      }
+
+      // Chart penuh: SVG asli (garis + gradient) tampil di bawah, ASCII di atasnya hilang dari bawah ke atas
+      chartBox.classList.remove('is-ascii');
+      mode = 'dissolve';
+      dissolveStart = performance.now();
+      if (!raf) raf = requestAnimationFrame(draw);
+    }
+    indicators.addEventListener('transitionend', finish);
+
+    return {
+      start() {
+        if (!points || reduceMotion) return;
+        clearTimeout(fadeTimer);
+        cancelAnimationFrame(raf);
+        setup();
+        mode = 'grow';
+        running = true;
+        chartBox.classList.remove('is-shrinking');
+        chartBox.classList.add('is-ascii');
+        canvas.classList.add('is-visible');
+        raf = requestAnimationFrame(draw);
+      },
+      shrink() {
+        // Tanpa data garis, reduced motion, atau chart masih datar: tidak perlu animasi canvas
+        if (!points || reduceMotion || currentScale() < 0.001) return this.stop();
+        clearTimeout(fadeTimer);
+        cancelAnimationFrame(raf);
+        if (!lineFull || w !== indicators.offsetWidth) setup();
+        mode = 'shrink';
+        running = true;
+        chartBox.classList.add('is-ascii', 'is-shrinking');
+        canvas.classList.add('is-visible');
+        raf = requestAnimationFrame(draw);
+      },
+      stop() {
+        running = false;
+        clearTimeout(fadeTimer);
+        cancelAnimationFrame(raf);
+        chartBox.classList.remove('is-ascii', 'is-shrinking');
+        canvas.classList.remove('is-visible');
+      },
+      // Ganti bentuk chart (saat period berubah)
+      setPoints(p) { points = p; lineFull = null; },
+      // Grid & bentuk chart saat penuh, dipakai juga oleh efek lingkaran kursor
+      geometry() {
+        if (!points) return null;
+        if (!lineFull || w !== indicators.offsetWidth) setup();
+        return { w, h, cols, rows, cellW, lineFull, CELL_H, PAD_TOP, BASE_Y, FILL_RAMP, PRIMARY };
+      },
+    };
+  })();
+
+  // Efek ASCII "air" di sekitar kursor: hanya aktif saat kursor bergerak.
+  // Setiap gerakan meninggalkan jejak titik yang menyatu (metaball) dengan riak halus,
+  // opacity 100% di pusat -> 0% di tepi, lalu memudar dan berhenti saat kursor diam.
+  const cursorAscii = (() => {
+    const canvas = document.getElementById('cursorCanvas');
+    const ctx = canvas.getContext('2d');
+    const RADIUS = 56;        // jari-jari tiap tetes
+    const LIFE = 420;         // ms sebelum satu tetes hilang
+    const SPACING = 6;        // jarak minimal antar tetes jejak (px)
+    const MAX_DROPS = 28;
+
+    let geo = null, seeds = null, raf = null, lastTime = 0, lastScramble = 0;
+    const drops = [];         // { x, y, life (1 -> 0), phase }
+
+    function ensureGeometry() {
+      const g = ascii.geometry();
+      if (!g) return false;
+      if (!geo || g.w !== geo.w) {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = g.w * dpr;
+        canvas.height = g.h * dpr;
+        canvas.style.width = g.w + 'px';
+        canvas.style.height = g.h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.font = '500 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        seeds = Float32Array.from({ length: g.cols * g.rows }, Math.random);
+      }
+      geo = g;
+      return true;
+    }
+
+    const chartReady = () => chartBox.classList.contains('is-hovered') && !chartBox.classList.contains('is-ascii');
+
+    // Apakah titik (x, y) berada di area isi chart (antara garis dan dasar 3,100)
+    function inFill(x, y) {
+      const c = Math.min(geo.cols - 1, Math.max(0, Math.floor(x / geo.cellW)));
+      return y > geo.lineFull[c] && y <= geo.BASE_Y;
+    }
+
+    function draw(now) {
+      const { cols, rows, cellW, lineFull, CELL_H, PAD_TOP, BASE_Y, FILL_RAMP, PRIMARY, w, h } = geo;
+      const dt = Math.min(64, now - (lastTime || now));
+      lastTime = now;
+
+      for (let i = drops.length - 1; i >= 0; i--) {
+        drops[i].life -= dt / LIFE;
+        if (drops[i].life <= 0) drops.splice(i, 1);
+      }
+
+      ctx.clearRect(0, 0, w, h);
+      if (!drops.length) { raf = null; lastTime = 0; return; }   // kursor diam -> efek berhenti
+
+      const scramble = now - lastScramble > 50;
+      if (scramble) lastScramble = now;
+
+      // Batas area yang perlu digambar
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const d of drops) {
+        minX = Math.min(minX, d.x); maxX = Math.max(maxX, d.x);
+        minY = Math.min(minY, d.y); maxY = Math.max(maxY, d.y);
+      }
+      const c0 = Math.max(0, Math.floor((minX - RADIUS) / cellW));
+      const c1 = Math.min(cols - 1, Math.ceil((maxX + RADIUS) / cellW));
+      const r0 = Math.max(0, Math.floor((minY - RADIUS - PAD_TOP) / CELL_H));
+      const r1 = Math.min(rows - 1, Math.ceil((maxY + RADIUS - PAD_TOP) / CELL_H));
+      const t = now * 0.001;
+
+      ctx.fillStyle = PRIMARY;
+      for (let c = c0; c <= c1; c++) {
+        const x = (c + 0.5) * cellW;
+        for (let r = r0; r <= r1; r++) {
+          const y = PAD_TOP + (r + 0.5) * CELL_H;
+          if (y - lineFull[c] <= 3 || y > BASE_Y) continue;
+
+          // Medan metaball: tetes-tetes yang berdekatan menyatu jadi bentuk cair
+          let field = 0, lifeSum = 0;
+          for (const d of drops) {
+            const dx = x - d.x, dy = y - d.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            // Tepi bergelombang (tidak bulat sempurna) + riak yang menjalar keluar
+            const wobble = 1 + 0.14 * Math.sin(Math.atan2(dy, dx) * 3 + t * 4 + d.phase);
+            const R = RADIUS * (0.55 + 0.45 * d.life) * wobble;
+            if (dist >= R) continue;
+            const k = 1 - (dist * dist) / (R * R);
+            const ripple = 0.85 + 0.15 * Math.sin(dist * 0.22 - t * 9);
+            const contrib = k * k * d.life * ripple;
+            field += contrib;
+            lifeSum += contrib * d.life;
+          }
+          if (field < 0.04) continue;
+
+          const strength = Math.min(1, field);
+          const i = r * cols + c;
+          if (scramble && Math.random() < 0.35) seeds[i] = Math.random();
+          const level = Math.min(0.999, Math.max(0, strength * 0.9 + (seeds[i] - 0.5) * 0.3));
+          // Bentuk & durasi tetap sama; hanya opacity ekor (tetes lama) yang dikurangi
+          const age = lifeSum / field;                   // ~1 di kepala, mendekati 0 di ekor
+          ctx.globalAlpha = strength * (0.25 + 0.75 * age * age);
+          ctx.fillText(FILL_RAMP[(level * FILL_RAMP.length) | 0], x, y);
+        }
+      }
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(draw);
+    }
+
+    return {
+      move(x, y) {
+        if (reduceMotion || !ensureGeometry()) return;
+        if (!chartReady() || !inFill(x, y)) return;   // di luar area chart: tidak ada tetes baru
+
+        const last = drops[drops.length - 1];
+        if (last && Math.hypot(x - last.x, y - last.y) < SPACING) {
+          last.x = x; last.y = y; last.life = 1;        // gerakan kecil: segarkan tetes terakhir
+        } else {
+          drops.push({ x, y, life: 1, phase: Math.random() * Math.PI * 2 });
+          if (drops.length > MAX_DROPS) drops.shift();
+        }
+        if (!raf) raf = requestAnimationFrame(draw);
+      },
+      leave() { drops.length = 0; },                     // chart menyusut -> jejak air langsung dibersihkan
+    };
+  })();
+
+  // Crosshair: garis dotted horizontal & vertikal mengikuti kursor,
+  // dengan label nilai (kanan) dan jam (bawah) sesuai skala sumbu.
+  (() => {
+    const plot = document.getElementById('plot');
+    const layer = document.getElementById('hoverLayer');
+    const crossX = document.getElementById('crosshairX');
+    const crossY = document.getElementById('crosshairY');
+    const valueLabel = document.getElementById('valueLabel');
+    const timeLabel = document.getElementById('timeLabel');
+
+    const Y_TOP = 8;                    // pusat baris "3,600"
+    const ROW_STEP = (321 - 16) / 5;    // jarak antar garis grid Y (61px)
+    const Y_BOTTOM = Y_TOP + ROW_STEP * 5; // pusat baris "3,100"
+
+    const fmtValue = (v) => Math.round(v).toLocaleString('en-US');
+
+    layer.addEventListener('mousemove', (e) => {
+      const rect = layer.getBoundingClientRect();
+      const k = rect.width / layer.offsetWidth || 1; // the embed's scale
+      const px = (e.clientX - rect.left) / k, py = (e.clientY - rect.top) / k;
+      cursorAscii.move(px, py);
+      const plotW = plot.clientWidth;
+      const x = Math.max(0, Math.min(layer.offsetWidth, px));
+      const y = Math.max(Y_TOP, Math.min(Y_BOTTOM, py));
+
+      const [yTop, yStep] = PERIODS[currentPeriod].yAxis;
+      const value = yTop - ((y - Y_TOP) / ROW_STEP) * yStep;
+      // Posisi sepanjang sumbu waktu: 0 = kolom label pertama, 1 = kolom terakhir
+      const f = Math.min(1, Math.max(0, (x - 20) / (plotW - 48 - 40)));
+
+      valueLabel.textContent = fmtValue(value);
+      timeLabel.textContent = PERIODS[currentPeriod].time(f);
+
+      crossX.style.top = (y - 10) + 'px';
+      crossY.style.left = x + 'px';
+
+      // Label jam di tengah garis, tapi jangan keluar dari area plot
+      const w = timeLabel.offsetWidth;
+      const shift = Math.max(-x, Math.min(plotW - x - w, -w / 2));
+      timeLabel.style.left = shift + 'px';
+
+      layer.classList.add('is-active');
+    });
+    layer.addEventListener('mouseleave', () => layer.classList.remove('is-active'));
+    // Transisi chart (ASCII) & animasi angka aktif saat kursor berada di mana pun di dalam komponen
+    chartBox.addEventListener('mouseenter', () => setHovered(true));
+    chartBox.addEventListener('mouseleave', () => setHovered(false));
+    layer.addEventListener('mouseleave', () => cursorAscii.leave());
+  })();
+
+  // Tab period: ganti label sumbu X, nilai statistik & bentuk chart,
+  // lalu chart diputar ulang dari garis datar ke penuh dengan efek ASCII.
+  (() => {
+    const tabs = document.getElementById('periodTabs');
+    const vertical = document.querySelector('.vertical');
+    const indicators = document.querySelector('.indicators');
+    const img = document.getElementById('indicatorImg');
+
+    function renderXAxis(labels) {
+      vertical.innerHTML = labels.map((l) =>
+        `<div class="v-col"><div class="v-line"><img alt="" src="assets/grid-line-vertical.svg" width="304" height="1"></div>`
+        + `<span class="x-label text-sm-regular">${l}</span></div>`).join('');
+      if (!reduceMotion) vertical.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+    }
+
+    const yLabels = [...document.querySelectorAll('.y-label')];
+    function renderYAxis([top, step]) {
+      yLabels.forEach((el, i) => { el.textContent = (top - i * step).toLocaleString('en-US'); });
+      if (!reduceMotion) yLabels.forEach((el) => el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' }));
+    }
+
+    function replayGrow() {
+      // Paksa chart kembali datar tanpa transisi, lalu tumbuh lagi (ASCII + angka dari 0)
+      indicators.style.transition = 'none';
+      indicators.style.transform = 'scaleY(0)';
+      void indicators.offsetWidth;
+      indicators.style.transition = '';
+      indicators.style.transform = '';
+      ascii.start();
+      progress = 0;
+      renderCounters(0);
+      animateCounters(1, GROW_MS);
+    }
+
+    function setPeriod(key) {
+      if (key === currentPeriod || !PERIODS[key]) return;
+      currentPeriod = key;
+      const p = PERIODS[key];
+      if (!p.src) { p.points = generatePoints(p.curve, p.seed); p.src = svgFromPoints(p.points); }
+
+      renderXAxis(p.labels);
+      renderYAxis(p.yAxis);
+      counters.forEach((el, i) => { el.dataset.count = p.stats[i]; });
+      img.src = p.src;
+      img.alt = p.alt;
+      ascii.setPoints(p.points);
+      cursorAscii.leave();
+
+      if (chartBox.classList.contains('is-hovered')) replayGrow();
+    }
+
+    tabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-period]');
+      if (btn) setPeriod(btn.dataset.period);
+    });
+  })();
+
+  // Hover icon: icon miring 3D ke arah kursor dan kilau cahaya putih mengikuti posisi kursor.
+  // Aktif saat kursor bergerak di atas / di dekat icon, lalu kembali rata saat kursor menjauh.
+  const iconTilt = (() => {
+    const morph = document.getElementById('morph');
+    const face = document.getElementById('iconFace');
+    const coin = face.querySelector('.icon-coin');
+    const ZONE = 140;          // jarak (px) di luar icon yang masih memicu efek
+    const MAX_TILT = 14;       // derajat
+    const cur = { rx: 0, ry: 0, mx: 50, my: 50, shine: 0 };
+    const tgt = { ...cur };
+    let raf = null;
+
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+    const busy = () => morph.classList.contains('is-open') || morph.classList.contains('is-animating');
+
+    function apply() {
+      // Tilt only, no zoom on hover; keeps the embed's scale (--s)
+      morph.style.transform = cur.shine < 0.001 && Math.abs(cur.rx) + Math.abs(cur.ry) < 0.01 ? ''
+        : `scale(var(--s, 1)) perspective(600px) rotateX(${cur.rx}deg) rotateY(${cur.ry}deg)`;
+      face.style.setProperty('--mx', cur.mx + '%');
+      face.style.setProperty('--my', cur.my + '%');
+      face.style.setProperty('--rx', 100 - cur.mx + '%');   // pusat pola cincin berlawanan dengan cahaya
+      face.style.setProperty('--ry', 100 - cur.my + '%');
+      face.style.setProperty('--shine', cur.shine);
+      coin.style.translate = `${cur.ry * 0.3}px ${-cur.rx * 0.3}px`;   // parallax kecil pada koin
+    }
+
+    function tick() {
+      let moving = false;
+      for (const k in cur) {
+        cur[k] += (tgt[k] - cur[k]) * 0.14;
+        if (Math.abs(tgt[k] - cur[k]) > 0.01) moving = true; else cur[k] = tgt[k];
+      }
+      apply();
+      raf = moving ? requestAnimationFrame(tick) : null;
+    }
+    const kick = () => { if (!raf) raf = requestAnimationFrame(tick); };
+
+    function rest() { Object.assign(tgt, { rx: 0, ry: 0, shine: 0 }); kick(); }
+
+    window.addEventListener('pointermove', (e) => {
+      if (busy() || reduceMotion) return;
+      const r = face.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const nx = (e.clientX - cx) / (r.width / 2);       // -1..1 di dalam icon
+      const ny = (e.clientY - cy) / (r.height / 2);
+      const dx = Math.max(r.left - e.clientX, 0, e.clientX - r.right);
+      const dy = Math.max(r.top - e.clientY, 0, e.clientY - r.bottom);
+      const near = clamp(1 - Math.hypot(dx, dy) / ZONE, 0, 1);
+      if (near === 0) return rest();
+
+      tgt.ry = (clamp(nx, -1.5, 1.5) / 1.5) * MAX_TILT * near;
+      tgt.rx = (-clamp(ny, -1.5, 1.5) / 1.5) * MAX_TILT * near;
+      tgt.mx = 50 + clamp(nx, -1.4, 1.4) * 50;
+      tgt.my = 50 + clamp(ny, -1.4, 1.4) * 50;
+      tgt.shine = near;
+      kick();
+    });
+    document.documentElement.addEventListener('pointerleave', rest);
+    window.addEventListener('blur', rest);
+
+    return {
+      // Dipanggil sebelum icon berubah jadi komponen: langsung rata tanpa sisa tilt
+      reset() {
+        cancelAnimationFrame(raf);
+        raf = null;
+        Object.assign(cur, { rx: 0, ry: 0, shine: 0 });
+        Object.assign(tgt, { rx: 0, ry: 0, shine: 0 });
+        apply();
+      },
+    };
+  })();
+
+  // Icon <-> component: container berubah ukuran & radius dari tengah (shared-element morph),
+  // konten chart muncul dengan fade + blur, icon memudar; kebalikannya saat icon X diklik.
+  (() => {
+    const morph = document.getElementById('morph');
+    const iconFace = document.getElementById('iconFace');
+    const closeBtn = document.querySelector('.close-btn');
+    const PREVIEW = new URLSearchParams(location.search).has('preview'); // portfolio's on-page preview
+    const EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
+    const ICON = { w: 100, h: 100, r: '23.765px' };
+    let isOpen = false;
+    let running = [];
+
+    const panelSize = () => {
+      const w = 1108; // design width; the whole component is scaled to the frame instead
+      morph.style.setProperty('--panel-w', w + 'px');
+      return { w, h: chartBox.offsetHeight, r: '8px' };
+    };
+
+    function toggle(open) {
+      if (open === isOpen) return;
+      isOpen = open;
+
+      // Ambil nilai saat ini (bisa di tengah animasi) supaya bisa berbalik arah dengan mulus
+      const cs = getComputedStyle(morph);
+      const from = { w: morph.offsetWidth, h: morph.offsetHeight, r: cs.borderRadius };
+      const iconOpacity = getComputedStyle(iconFace).opacity;
+      const iconFilter = getComputedStyle(iconFace).filter;
+      const chartCs = getComputedStyle(chartBox);
+      const chart = { opacity: chartCs.opacity, filter: chartCs.filter, transform: chartCs.transform };
+      running.forEach((a) => a.cancel());
+
+      const to = open ? panelSize() : ICON;
+      if (!open && chartBox.classList.contains('is-hovered')) setHovered(false);
+
+      morph.classList.add('is-animating');
+      morph.classList.toggle('is-open', open);
+      iconFace.setAttribute('aria-expanded', String(open));
+
+      // State akhir (dipakai setelah animasi selesai)
+      Object.assign(morph.style, { width: to.w + 'px', height: to.h + 'px', borderRadius: to.r });
+      iconFace.style.opacity = open ? '0' : '1';
+      iconFace.style.filter = open ? 'blur(6px)' : 'none';
+      chartBox.style.opacity = open ? '1' : '0';
+      chartBox.style.filter = open ? 'none' : 'blur(12px)';
+      chartBox.style.transform = open ? 'translate(-50%, -50%)' : 'translate(-50%, -50%) scale(0.96)';
+
+      const dur = open ? 560 : 460;
+      const tFrom = chart.transform === 'none' ? 'translate(-50%, -50%)' : chart.transform;
+      running = reduceMotion ? [] : [
+        morph.animate(
+          [{ width: from.w + 'px', height: from.h + 'px', borderRadius: from.r },
+           { width: to.w + 'px', height: to.h + 'px', borderRadius: to.r }],
+          { duration: dur, easing: EASE }),
+        iconFace.animate(
+          [{ opacity: iconOpacity, filter: iconFilter }, { opacity: open ? 0 : 1, filter: open ? 'blur(6px)' : 'blur(0px)' }],
+          open ? { duration: 180, easing: 'ease-out' }
+               : { duration: 240, delay: 120, easing: 'ease-out', fill: 'backwards' }),
+        chartBox.animate(
+          [{ opacity: chart.opacity, filter: chart.filter, transform: tFrom },
+           { opacity: open ? 1 : 0, filter: open ? 'blur(0px)' : 'blur(12px)',
+             transform: open ? 'translate(-50%, -50%)' : 'translate(-50%, -50%) scale(0.96)' }],
+          open ? { duration: 420, delay: 80, easing: EASE, fill: 'backwards' }
+               : { duration: 220, easing: 'ease-in' }),
+      ];
+
+      const done = () => {
+        morph.classList.remove('is-animating');
+        // Move focus for keyboard users; the self-playing preview leaves it alone (no focus ring)
+        if (!PREVIEW) (open ? closeBtn : iconFace).focus({ preventScroll: true });
+      };
+      if (!running.length) return done();
+      Promise.all(running.map((a) => a.finished)).then(done).catch(() => {});   // dibatalkan = dibalik arah
+    }
+
+    iconFace.addEventListener('click', () => { iconTilt.reset(); toggle(true); });
+    closeBtn.addEventListener('click', () => toggle(false));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggle(false); });
+    // Scale to the frame: the open panel (1108px) is 440px wide in a 560×380 frame
+    const fit = () => morph.style.setProperty('--s', Math.min(innerHeight / 380, innerWidth / 560) * (440 / 1108));
+    fit();
+    window.addEventListener('resize', fit);
+
+    // Portfolio's on-page preview (?preview), once the box comes into view: the icon waits 2s,
+    // opens straight into the chart growing with its ASCII effect (as if hovered right after
+    // the click), stays 5s as a card, then turns back into the icon, and repeats.
+    // (The page loads this frame before it is scrolled to, hence waiting until it shows.)
+    if (PREVIEW) {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const loop = async () => {
+        for (;;) {
+          await wait(2000);
+          iconTilt.reset();
+          toggle(true);
+          setHovered(true);
+          await wait(5000);
+          toggle(false);
+        }
+      };
+      if (!('IntersectionObserver' in window)) loop();
+      else {
+        const seen = new IntersectionObserver((entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          seen.disconnect();
+          loop();
+        }, { threshold: 0.6 });
+        seen.observe(morph);
+      }
+    }
+  })();
+</script>
+</body>
+</html>
