@@ -480,6 +480,9 @@
       padding: 24px;
     }
     .success .close { top: 24px; right: 24px; }
+    /* Success view's X darkens on hover (#8D99A5 -> about #474D53) */
+    .success .close img { transition: filter var(--fast) var(--ease); }
+    .success .close:hover img { filter: brightness(0.5); }
     .success__icon { position: relative; display: block; width: 32px; height: 32px; }
     .success__icon img { display: block; }
     /* Dot grid + ripple waves drawn behind the top of the success card */
@@ -956,10 +959,9 @@
     ].map(([sel, ok, message]) => ({ control: $(sel), ok, message }));
     const isShown = (control) => !control.closest("[data-for]")?.hidden;
 
-    // The topmost incomplete field, looking only above `before` when it is given.
-    function firstIncomplete(before) {
+    // The topmost incomplete field
+    function firstIncomplete() {
       for (const { control, ok } of required) {
-        if (control === before) return null;
         if (isShown(control) && !ok(control.value)) return control;
       }
       return null;
@@ -975,14 +977,7 @@
       return !first;
     }
 
-    // A field can't be entered while one above it is still incomplete: that one shows its
-    // error, takes the focus back and gives a short shake (as it does on a blocked upgrade). Clicks are stopped before they
-    // focus the field (or open the country menu); Tab is caught as the focus arrives.
-    function blockedBy(target) {
-      const entry = required.find(({ control }) => control === target);
-      return entry && !PREVIEW ? firstIncomplete(entry.control) : null;
-    }
-
+    // A blocked upgrade: the field shows its error, takes the focus and gives a short shake
     function refuse(above) {
       showOnlyError(above);
       above.focus();
@@ -993,20 +988,6 @@
         { duration: 320, easing: "ease-out" }
       );
     }
-
-    form.addEventListener("mousedown", (e) => {
-      const control = e.target.closest(".field")?.querySelector("input, select");
-      const above = control && blockedBy(control);
-      if (!above) return;
-      e.preventDefault();
-      e.stopPropagation();
-      refuse(above);
-    }, true);
-
-    form.addEventListener("focusin", (e) => {
-      const above = blockedBy(e.target);
-      if (above) refuse(above);
-    });
 
     // Once an error shows, it clears as soon as the field is complete.
     required.forEach(({ control, ok }) => ["input", "change"].forEach((type) =>
