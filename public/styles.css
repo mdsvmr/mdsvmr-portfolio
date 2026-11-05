@@ -378,6 +378,7 @@ p {
 .project__case {
   align-self: center;
   font-size: 14px;
+  color: var(--text-inactive);
 }
 
 .project__case--locked {
