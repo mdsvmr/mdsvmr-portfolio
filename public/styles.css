@@ -194,6 +194,14 @@ p {
   pointer-events: none;
 }
 
+/* Mobile: one line pinned 32px above the bottom, pointing to the desktop version */
+.zoom-caption--mobile {
+  top: auto;
+  bottom: 32px;
+  padding: 0 20px;
+  font-size: 11px;
+}
+
 /* Mobile: a zoomed demo is only shown larger, not used */
 .zoom-media.is-preview iframe {
   pointer-events: none;

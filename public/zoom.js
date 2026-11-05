@@ -44,11 +44,18 @@
     return { left: (vw - w) / 2, top: (vh - h - reserve) / 2, width: w, height: h };
   }
 
-  // The hint for a demo (a hidden .zoom-hint next to it, translated with the page)
+  // The hint for a zoomed demo, from hidden text on the page (so it is translated with it):
+  // on desktop its own .zoom-hint under the media, on mobile one shared .zoom-hint-mobile
+  // pinned 32px above the bottom of the screen.
   function zoomHint(source) {
+    if (!demoFrame(source)) return null;
+    if (!demosUsable()) {
+      var shared = document.querySelector(".zoom-hint-mobile");
+      return shared ? { text: shared.textContent.trim(), mobile: true } : null;
+    }
     var figure = source.closest("figure");
     var hint = figure && figure.querySelector(".zoom-hint");
-    return hint && demosUsable() ? hint.textContent.trim() : "";
+    return hint ? { text: hint.textContent.trim(), mobile: false } : null;
   }
 
   function placeCaption(caption, rect) {
@@ -259,7 +266,7 @@
     document.documentElement.classList.add("is-zoomed");
     var from = source.getBoundingClientRect();
     var hint = zoomHint(source);
-    var to = targetRect(from.width / from.height, Boolean(hint));
+    var to = targetRect(from.width / from.height, Boolean(hint && !hint.mobile));
 
     var overlay = document.createElement("div");
     overlay.className = "zoom-overlay";
@@ -274,10 +281,10 @@
     var caption = null;
     if (hint) {
       caption = document.createElement("p");
-      caption.className = "zoom-caption";
-      caption.textContent = hint;
+      caption.className = hint.mobile ? "zoom-caption zoom-caption--mobile" : "zoom-caption";
+      caption.textContent = hint.text;
       caption.style.opacity = "0";
-      placeCaption(caption, to);
+      if (!hint.mobile) placeCaption(caption, to);
       document.body.appendChild(caption);
     }
 
@@ -420,12 +427,13 @@
   window.addEventListener("resize", function () {
     if (!state || state.closing) return;
     var r = state.source.getBoundingClientRect();
-    var to = targetRect(r.width / r.height, Boolean(state.caption));
+    var under = state.caption && !state.caption.classList.contains("zoom-caption--mobile");
+    var to = targetRect(r.width / r.height, Boolean(under));
     var c = state.clone.style;
     c.left = to.left + "px";
     c.top = to.top + "px";
     c.width = to.width + "px";
     c.height = to.height + "px";
-    if (state.caption) placeCaption(state.caption, to);
+    if (under) placeCaption(state.caption, to);
   });
 })();
