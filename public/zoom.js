@@ -28,20 +28,20 @@
     return { x: 40, y: 40, max: MAX_HEIGHT };
   }
 
-  // withCaption: keep room under the media for the hint (only needed where the gutter is
-  // smaller than that room; the media then sits that much higher).
+  // withCaption: keep room under the media for the hint. Where the gutter is smaller than
+  // that room, the same room is kept above too, so the media stays vertically centred.
   function targetRect(aspect, withCaption) {
     var g = gutter();
     var vw = document.documentElement.clientWidth;
     var vh = window.innerHeight;
-    var reserve = withCaption ? Math.max(0, CAPTION_SPACE - g.y) : 0;
-    var h = Math.min(g.max, vh - g.y * 2 - reserve);
+    var gy = withCaption ? Math.max(g.y, CAPTION_SPACE) : g.y;
+    var h = Math.min(g.max, vh - gy * 2);
     var w = h * aspect;
     if (w > vw - g.x * 2) {
       w = vw - g.x * 2;
       h = w / aspect;
     }
-    return { left: (vw - w) / 2, top: (vh - h - reserve) / 2, width: w, height: h };
+    return { left: (vw - w) / 2, top: (vh - h) / 2, width: w, height: h };
   }
 
   // The hint for a zoomed demo, from hidden text on the page (so it is translated with it):
