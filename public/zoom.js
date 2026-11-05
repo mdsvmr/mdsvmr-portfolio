@@ -47,7 +47,7 @@
   // The line shown with zoomed media: a photo's own data-caption, or for a demo a hint from
   // hidden text on the page (so it is translated with it), on desktop its own .zoom-hint,
   // on mobile one shared .zoom-hint-mobile. On desktop it sits under the media; on the mobile
-  // layout it is pinned 32px above the bottom of the screen.
+  // layout it is pinned 24px above the bottom of the screen.
   function zoomHint(source) {
     var own = source.getAttribute("data-caption");
     if (own) return { text: own, mobile: !demosUsable() };
