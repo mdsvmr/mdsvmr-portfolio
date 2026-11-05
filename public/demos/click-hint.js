@@ -1,6 +1,6 @@
 // Portfolio zoom: shows that a demo can be used. 1s after load a pointing-hand cursor glides
-// onto the first thing to click, presses it with a small blue ripple and fades out; twice,
-// then it's gone. Not in the on-page / mobile preview (?preview); stops at the first click.
+// onto the first thing to click, presses it with a small blue ripple and fades out, once.
+// Not in the on-page / mobile preview (?preview); stops at the first click.
 // Usage: <script src="/demos/click-hint.js" data-target="CSS selector"></script>
 (function () {
   if (new URLSearchParams(location.search).has("preview")) return;
@@ -87,10 +87,7 @@
 
   (async function () {
     await wait(1000);
-    for (var i = 0; i < 2 && !stopped; i++) {
-      await tap();
-      await wait(300);
-    }
+    if (!stopped) await tap();
     stop();
   })();
 })();

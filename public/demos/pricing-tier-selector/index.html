@@ -89,6 +89,8 @@
       border-radius: 4px;
     }
     .close img { display: block; }
+    /* The form card's X is decoration in the portfolio embed (the success view's X still works) */
+    .close--static { cursor: default; pointer-events: none; }
     .title { font-size: 20px; font-weight: 600; line-height: 1.5; letter-spacing: -0.2px; }
     .subtitle { font-size: 14px; line-height: 1.5; letter-spacing: -0.28px; color: var(--text-secondary); }
 
@@ -548,7 +550,7 @@
         <button type="button" class="period__btn" data-period="monthly" aria-pressed="true">Monthly</button>
         <button type="button" class="period__btn" data-period="yearly" aria-pressed="false">Yearly</button>
       </div>
-      <button type="button" class="close" aria-label="Close">
+      <button type="button" class="close close--static" aria-label="Close" tabindex="-1">
         <img src="assets/x-close.svg" width="16" height="16" alt="" />
       </button>
     </header>
