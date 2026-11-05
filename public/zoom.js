@@ -44,10 +44,13 @@
     return { left: (vw - w) / 2, top: (vh - h) / 2, width: w, height: h };
   }
 
-  // The hint for a zoomed demo, from hidden text on the page (so it is translated with it):
-  // on desktop its own .zoom-hint under the media, on mobile one shared .zoom-hint-mobile
-  // pinned 32px above the bottom of the screen.
+  // The line shown with zoomed media: a photo's own data-caption, or for a demo a hint from
+  // hidden text on the page (so it is translated with it), on desktop its own .zoom-hint,
+  // on mobile one shared .zoom-hint-mobile. On desktop it sits under the media; on the mobile
+  // layout it is pinned 32px above the bottom of the screen.
   function zoomHint(source) {
+    var own = source.getAttribute("data-caption");
+    if (own) return { text: own, mobile: !demosUsable() };
     if (!demoFrame(source)) return null;
     if (!demosUsable()) {
       var shared = document.querySelector(".zoom-hint-mobile");
@@ -60,6 +63,17 @@
 
   function placeCaption(caption, rect) {
     caption.style.top = rect.top + rect.height + CAPTION_GAP + "px";
+  }
+
+  // A hidden caption element for `hint`, placed for the media at `rect`; the caller fades it in
+  function makeCaption(hint, rect) {
+    var caption = document.createElement("p");
+    caption.className = hint.mobile ? "zoom-caption zoom-caption--mobile" : "zoom-caption";
+    caption.textContent = hint.text;
+    caption.style.opacity = "0";
+    if (!hint.mobile) placeCaption(caption, rect);
+    document.body.appendChild(caption);
+    return caption;
   }
 
   function invert(from, to) {
@@ -227,11 +241,12 @@
     // Bring the new source into view behind the overlay, so closing flies back to it.
     next.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
     var r = next.getBoundingClientRect();
-    var clone = prepareClone(next, targetRect(r.width / r.height));
-    if (s.caption) {
-      s.caption.remove();
-      s.caption = null;
-    }
+    var hint = zoomHint(next);
+    var rect = targetRect(r.width / r.height, Boolean(hint && !hint.mobile));
+    var clone = prepareClone(next, rect);
+    var oldCaption = s.caption;
+    var caption = hint ? makeCaption(hint, rect) : null;
+    s.caption = caption;
     if (old.classList.contains("is-prev")) clone.classList.add("is-prev");
     if (old.classList.contains("is-next")) clone.classList.add("is-next");
     trackSide(clone);
@@ -247,8 +262,10 @@
     if (oldVideo) oldVideo.pause();
 
     ready(clone).then(function () {
+      if (oldCaption) oldCaption.remove();
       if (state !== s || s.clone !== clone) {
         clone.remove();
+        if (caption && (!state || state.caption !== caption)) caption.remove();
         return;
       }
       var duration = reduceMotion.matches ? 1 : SWAP_MS;
@@ -256,6 +273,10 @@
       old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: duration, easing: "ease-out", fill: "forwards" });
       clone.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duration, easing: "ease-out", fill: "forwards" });
       clone.style.opacity = "";
+      if (caption) {
+        caption.animate([{ opacity: 0 }, { opacity: 1 }], { duration: duration, easing: "ease-out" });
+        caption.style.opacity = "";
+      }
       setTimeout(function () { old.remove(); }, duration + 50);
     });
   }
@@ -278,15 +299,7 @@
     document.body.appendChild(overlay);
     document.body.appendChild(clone);
 
-    var caption = null;
-    if (hint) {
-      caption = document.createElement("p");
-      caption.className = hint.mobile ? "zoom-caption zoom-caption--mobile" : "zoom-caption";
-      caption.textContent = hint.text;
-      caption.style.opacity = "0";
-      if (!hint.mobile) placeCaption(caption, to);
-      document.body.appendChild(caption);
-    }
+    var caption = hint ? makeCaption(hint, to) : null;
 
     state = { source: source, clone: clone, overlay: overlay, caption: caption, closing: false };
 
@@ -372,7 +385,7 @@
         setTimeout(function () { el.remove(); }, 250);
       });
       s.overlay.remove();
-      if (s.caption) s.caption.remove();
+      document.querySelectorAll(".zoom-caption").forEach(function (el) { el.remove(); });
       if (state === s) state = null;
       if (s.source.focus) s.source.focus({ preventScroll: true });
     };
