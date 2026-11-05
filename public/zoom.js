@@ -3,7 +3,8 @@
 // on-page position with a FLIP transform, so it stays crisp once open.
 // While zoomed, the left/right half of the media (or the arrow keys) steps to the
 // previous/next media on the page, looping at either end. A zoomed live demo is used
-// instead (its clicks and arrow keys stay with it); Escape or a click outside closes it.
+// instead on desktop (its clicks and arrow keys stay with it); on the mobile layout it
+// can't be used, so it steps like any other media. Escape or a click outside closes it.
 (function () {
   var SELECTOR = ".showcase, .work__image, .moments__image";
   var MAX_HEIGHT = 600;
@@ -207,6 +208,11 @@
     });
   }
 
+  // Whether the zoomed media steps on a click of its halves / the arrow keys
+  function steps(clone) {
+    return !demoFrame(clone) || !demosUsable();
+  }
+
   function items() {
     return Array.prototype.slice.call(document.querySelectorAll(SELECTOR)).filter(function (el) {
       return !el.classList.contains("zoom-media");
@@ -220,7 +226,7 @@
   }
 
   function trackSide(clone) {
-    if (demoFrame(clone)) return; // the demo uses its own clicks
+    if (!steps(clone)) return; // the demo uses its own clicks
     clone.addEventListener("mousemove", function (e) {
       var dir = side(clone, e.clientX);
       clone.classList.toggle("is-prev", dir < 0);
@@ -412,7 +418,7 @@
     if (!state) return;
     var media = e.target.closest(".zoom-media");
     if (media) {
-      if (media === state.clone && !demoFrame(media)) step(side(media, e.clientX));
+      if (media === state.clone && steps(media)) step(side(media, e.clientX));
       return;
     }
     if (e.target.closest(SELECTOR)) return;
@@ -422,7 +428,7 @@
   function onKey(e) {
     if (!state) return;
     if (e.key === "Escape") close();
-    else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !demoFrame(state.clone)) {
+    else if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && steps(state.clone)) {
       e.preventDefault();
       step(e.key === "ArrowLeft" ? -1 : 1);
     }
