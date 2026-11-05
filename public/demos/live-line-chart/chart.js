@@ -1,6 +1,9 @@
 // Live price chart: new ticks stream in from the right, the line scrolls left,
 // the y-scale eases to fit, the live dot pulses and the clock labels scroll
-// along with the data. Loops forever.
+// along with the data. Loops forever. The same price stream can also be shown as
+// candlesticks (window.liveChart.setMode('candle')): each candle covers 12px of
+// time, the newest one forms live at the right and the row steps left as a new
+// candle opens.
 (() => {
   const canvas = document.getElementById('priceChart');
   if (!canvas) return;
@@ -24,6 +27,22 @@
   const LABEL_FADE = 24;        // px over which labels fade in/out at the gutters
   const SVG_W = 352.438, SVG_Y_OFFSET = 3 - 0.61;
 
+  // Candlesticks (Figma 1099:4900)
+  const CANDLE_SPACING = 12;    // centre to centre; also sets how long a candle lasts
+  const CANDLE_W = 7.75;        // body width
+  const WICK_W = 0.86;
+  const CANDLE_RIGHT = 25.13;   // newest candle's centre, from the right edge
+  const CANDLE_TOP = 1, CANDLE_BOTTOM = 150; // just above the dashed baseline
+  const CANDLE_MIN_BODY = 2;
+  const CANDLE_GLIDE_MS = 140;  // the row steps left this quickly when a candle opens
+  const UP = '#2eb88a', DOWN = '#ff4c6e';
+  const UP_RGB = '46, 184, 138', DOWN_RGB = '255, 76, 110';
+  const MODE_EASE_SEC = 0.12;   // line <-> candle cross-fade
+  // A candle only spans two or three ticks, so its moves are drawn larger (around a
+  // running average of the closes) to read like the design; the price itself is unchanged.
+  const CANDLE_AMP = 2.6, CANDLE_AVG = 0.3;
+  const WICK_REACH = 0.16;      // of the typical range, at most
+
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let W = 0, H = 0, dpr = 1;
@@ -34,12 +53,19 @@
   let R = 1;                    // typical price range, drives volatility
   let mean = 0;
   let lastTick = 0, last = 0;
+  let candleMs = 570;           // set from the plot width so candles sit 12px apart
+  let candleRange = { min: 0, max: 1 };
+  let mode = 'line', mix = 0;   // mix: 0 = line, 1 = candles
+  // Candles are drawn on their own layer so their left side can fade out like the line
+  const candleLayer = document.createElement('canvas');
+  const cctx = candleLayer.getContext('2d');
 
   function resize() {
     dpr = Math.max(1, window.devicePixelRatio || 1) * 2; // extra density: phone frame may be scaled
     W = canvas.offsetWidth; H = canvas.offsetHeight; // layout size, ignores the phone's scale()
-    canvas.width = Math.round(W * dpr);
-    canvas.height = Math.round(H * dpr);
+    canvas.width = candleLayer.width = Math.round(W * dpr);
+    canvas.height = candleLayer.height = Math.round(H * dpr);
+    if (W) candleMs = CANDLE_SPACING / ((W - RIGHT_INSET) / (WINDOW_SEC * 1000));
   }
 
   // Seed with the exact line from the design so the first frame matches it
@@ -90,8 +116,8 @@
     const vals = ys.map((y) => -y); // higher price = higher on screen
     points = vals.slice(0, -1).map((v, i) => ({ t: now - (POINTS - 1 - i) * TICK_MS, v }));
     head.v = head.target = vals[vals.length - 1];
-    range.min = Math.min(...vals);
-    range.max = Math.max(...vals);
+    range.min = candleRange.min = Math.min(...vals);
+    range.max = candleRange.max = Math.max(...vals);
     R = range.max - range.min;
     mean = vals.reduce((s, v) => s + v, 0) / vals.length;
     buildMoves(vals);
@@ -130,7 +156,7 @@
       points.push({ t: lastTick, v: head.target });
       head.target = nextPrice(head.target);
     }
-    const oldest = now - (WINDOW_SEC + 2) * 1000;
+    const oldest = now - (WINDOW_SEC + 14) * 1000; // enough history for a full row of candles
     while (points.length > 2 && points[1].t < oldest) points.shift();
   }
 
@@ -168,8 +194,12 @@
       ctx.lineTo(end.x, end.y);
     };
 
+    mix += ((mode === 'candle' ? 1 : 0) - mix) * (reduceMotion ? 1 : 1 - Math.exp(-dt / MODE_EASE_SEC));
+    const lineAlpha = 1 - mix;
+
     // Area fill, fading out toward the left like the design
     ctx.save();
+    ctx.globalAlpha = lineAlpha;
     ctx.beginPath();
     trace();
     ctx.lineTo(plotRight, FILL_BOTTOM);
@@ -180,6 +210,7 @@
     fill.addColorStop(1, 'rgba(66, 208, 161, 0)');
     ctx.fillStyle = fill;
     ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'destination-in';
     const fade = ctx.createLinearGradient(0, 0, plotRight, 0);
     fade.addColorStop(0, 'rgba(0,0,0,0)');
@@ -190,22 +221,7 @@
 
     // Current-price guide
     const hy = yOf(head.v);
-    ctx.save();
-    ctx.setLineDash([4, 4]);
-    // Ends fade to 0% so the guide melts into the chart, like the reference
-    const guide = ctx.createLinearGradient(GUIDE_INSET, 0, W - GUIDE_INSET, 0);
-    guide.addColorStop(0, 'rgba(66, 208, 161, 0)');
-    guide.addColorStop(0.35, 'rgba(66, 208, 161, 0.35)');
-    guide.addColorStop(0.9, 'rgba(66, 208, 161, 0.35)');
-    guide.addColorStop(1, 'rgba(66, 208, 161, 0)');
-    ctx.strokeStyle = guide;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    // Same span as the dashed baseline under the chart (20px gutters)
-    ctx.moveTo(GUIDE_INSET, Math.round(hy) + 0.5);
-    ctx.lineTo(W - GUIDE_INSET, Math.round(hy) + 0.5);
-    ctx.stroke();
-    ctx.restore();
+    if (lineAlpha > 0.001) drawGuide(hy, '66, 208, 161', lineAlpha);
 
     // Line: mint at the tip, green through the middle, fading to 0% at the left
     const stroke = ctx.createLinearGradient(0, 0, plotRight, 0);
@@ -213,6 +229,8 @@
     stroke.addColorStop(0.3, 'rgba(66, 208, 161, 0.55)');
     stroke.addColorStop(1 - 0.394231, '#42d0a1');
     stroke.addColorStop(1, '#8efad6');
+    ctx.save();
+    ctx.globalAlpha = lineAlpha;
     ctx.beginPath();
     trace();
     ctx.strokeStyle = stroke;
@@ -220,10 +238,14 @@
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.stroke();
+    ctx.restore();
 
+    drawCandles(now, dt);
     drawLabels(now, plotRight, pxPerMs);
     updatePrice(now, dt);
 
+    ctx.save();
+    ctx.globalAlpha = lineAlpha;
     // Pulse ring
     const phase = ((now / 1000) % PULSE_EVERY) / PULSE_DURATION;
     if (!reduceMotion && phase < 1) {
@@ -247,6 +269,136 @@
     ctx.arc(plotRight, hy, 3, 0, Math.PI * 2);
     ctx.fillStyle = '#8efad6';
     ctx.fill();
+    ctx.restore();
+  }
+
+  // Dashed current-price guide; the ends fade to 0% so it melts into the chart,
+  // like the reference. Same span as the dashed baseline (20px gutters).
+  function drawGuide(y, rgb, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.setLineDash([4, 4]);
+    const guide = ctx.createLinearGradient(GUIDE_INSET, 0, W - GUIDE_INSET, 0);
+    guide.addColorStop(0, `rgba(${rgb}, 0)`);
+    guide.addColorStop(0.35, `rgba(${rgb}, 0.35)`);
+    guide.addColorStop(0.9, `rgba(${rgb}, 0.35)`);
+    guide.addColorStop(1, `rgba(${rgb}, 0)`);
+    ctx.strokeStyle = guide;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(GUIDE_INSET, Math.round(y) + 0.5);
+    ctx.lineTo(W - GUIDE_INSET, Math.round(y) + 0.5);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Stable 0..1 noise per candle, for wicks that reach past the ticks
+  const noise = (k, salt) => {
+    const x = Math.sin(k * 12.9898 + salt * 78.233) * 43758.5453;
+    return x - Math.floor(x);
+  };
+
+  // Candles built from the same ticks as the line: each opens at the previous
+  // close, closes at its last tick (the live one at the moving price), and its
+  // wicks reach a little past the ticks it saw.
+  function buildCandles(now) {
+    const cur = Math.floor(now / candleMs);
+    const first = cur - Math.ceil(W / CANDLE_SPACING) - 3;
+    const from = first - 15; // extra candles before the row settle the running average
+    const ticks = new Map();
+    for (const p of points) {
+      const k = Math.floor(p.t / candleMs);
+      if (k < from || k > cur) continue;
+      if (!ticks.has(k)) ticks.set(k, []);
+      ticks.get(k).push(p.v);
+    }
+    if (!ticks.has(cur)) ticks.set(cur, []);
+    ticks.get(cur).push(head.v);
+    const candles = [];
+    let prev;
+    for (let k = from; k <= cur; k++) {
+      let vs = ticks.get(k);
+      if (!vs || !vs.length) {
+        if (prev === undefined) continue;
+        vs = [prev];
+      }
+      const open = prev === undefined ? vs[0] : prev;
+      const close = vs[vs.length - 1];
+      // The live candle grows its wicks as it forms
+      const grow = k === cur ? Math.min(1, (now - k * candleMs) / candleMs) : 1;
+      const reach = R * WICK_REACH * grow;
+      const high = Math.max(open, ...vs) + Math.pow(noise(k, 1), 3) * reach;
+      const low = Math.min(open, ...vs) - Math.pow(noise(k, 2), 3) * reach;
+      prev = close;
+      candles.push({ k, open, close, high, low });
+    }
+    // Draw each candle's moves larger around the running average of the closes before it
+    let avg = candles.length ? candles[0].open : head.v;
+    const out = [];
+    for (const c of candles) {
+      const big = (v) => avg + (v - avg) * CANDLE_AMP;
+      if (c.k >= first) out.push({ k: c.k, open: big(c.open), close: big(c.close), high: big(c.high), low: big(c.low) });
+      avg += (c.close - avg) * CANDLE_AVG;
+    }
+    return { candles: out, cur };
+  }
+
+  function drawCandles(now, dt) {
+    const { candles, cur } = buildCandles(now);
+    // Fit the y-scale to the candles on screen
+    let lo = Infinity, hi = -Infinity;
+    for (const c of candles) {
+      if (c.low < lo) lo = c.low;
+      if (c.high > hi) hi = c.high;
+    }
+    const k = reduceMotion ? 1 : 1 - Math.exp(-dt / SCALE_EASE_SEC);
+    candleRange.min += (lo - candleRange.min) * k;
+    candleRange.max += (hi - candleRange.max) * k;
+    if (mix < 0.001) return;
+    const span = Math.max(candleRange.max - candleRange.min, R * 0.2);
+    const yOf = (v) => CANDLE_BOTTOM - ((v - candleRange.min) / span) * (CANDLE_BOTTOM - CANDLE_TOP);
+
+    // A new candle slides in from the right as the row steps left
+    const since = now - cur * candleMs;
+    const t = reduceMotion ? 1 : Math.min(1, since / CANDLE_GLIDE_MS);
+    const glide = CANDLE_SPACING * Math.pow(1 - t, 3);
+    const right = W - CANDLE_RIGHT;
+
+    cctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cctx.clearRect(0, 0, W, H);
+    for (const c of candles) {
+      const x = right - (cur - c.k) * CANDLE_SPACING + glide;
+      if (x < -CANDLE_W || x > W + CANDLE_W) continue;
+      const up = c.close >= c.open;
+      cctx.fillStyle = up ? UP : DOWN;
+      const yHi = yOf(c.high), yLo = yOf(c.low);
+      cctx.fillRect(x - WICK_W / 2, yHi, WICK_W, Math.max(yLo - yHi, 1));
+      let top = yOf(Math.max(c.open, c.close)), bottom = yOf(Math.min(c.open, c.close));
+      if (bottom - top < CANDLE_MIN_BODY) {
+        const mid = (top + bottom) / 2;
+        top = mid - CANDLE_MIN_BODY / 2;
+        bottom = mid + CANDLE_MIN_BODY / 2;
+      }
+      cctx.fillRect(x - CANDLE_W / 2, top, CANDLE_W, bottom - top);
+    }
+    // Left side fades to the background, with the same ramp as the line
+    cctx.globalCompositeOperation = 'destination-in';
+    const fade = cctx.createLinearGradient(0, 0, W - RIGHT_INSET, 0);
+    fade.addColorStop(0, 'rgba(0,0,0,0)');
+    fade.addColorStop(0.3, 'rgba(0,0,0,0.55)');
+    fade.addColorStop(1 - 0.394231, 'rgba(0,0,0,1)');
+    cctx.fillStyle = fade;
+    cctx.fillRect(0, 0, W, H);
+    cctx.globalCompositeOperation = 'source-over';
+
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = mix;
+    ctx.drawImage(candleLayer, 0, 0);
+    ctx.restore();
+
+    const live = candles[candles.length - 1];
+    drawGuide(yOf(live.close), live.close >= live.open ? UP_RGB : DOWN_RGB, mix);
   }
 
   // Header price follows the chart tip. Over 5s the move is small, so the price
@@ -343,4 +495,12 @@
 
   window.addEventListener('resize', resize);
   start();
+
+  // Line / candlestick toggle (the page wires the buttons)
+  window.liveChart = {
+    setMode(next) {
+      mode = next === 'candle' ? 'candle' : 'line';
+      if (reduceMotion && points.length) draw(performance.now(), 1);
+    },
+  };
 })();

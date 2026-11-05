@@ -41,6 +41,8 @@ body {
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 /* Portfolio embed: buttons, tabs and the holding card are static (no click or hover) */
 button, .card.holding { cursor: default; pointer-events: none; }
+/* ...except the line / candlestick toggle */
+.chart-type-btn { cursor: pointer; pointer-events: auto; }
 a { color: inherit; text-decoration: none; }
 img { display: block; }
 

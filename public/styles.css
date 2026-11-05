@@ -46,7 +46,7 @@ body * {
 /* Text selection block (mouse devices only; touchscreens keep the OS selection) */
 @media (hover: hover) and (pointer: fine) {
   ::selection {
-    background: #f1f2f4;
+    background: #e8eaed;
   }
 }
 

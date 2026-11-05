@@ -74,10 +74,12 @@
 
                 <div class="timeframes" role="tablist">
                   <div class="chip chart-type">
-                    <button class="chart-type-btn" tabindex="-1" type="button" aria-label="Line chart">
+                    <button class="chart-type-btn" type="button" aria-label="Line chart" aria-pressed="true" data-chart="line"
+                      data-on="assets/chart-line.svg" data-off="assets/chart-line-muted.svg">
                       <img src="assets/chart-line.svg" alt="" width="16" height="16" />
                     </button>
-                    <button class="chart-type-btn" tabindex="-1" type="button" aria-label="Candlestick chart">
+                    <button class="chart-type-btn" id="candleBtn" type="button" aria-label="Candlestick chart" aria-pressed="false" data-chart="candle"
+                      data-on="assets/chart-candle-active.svg" data-off="assets/chart-candle.svg">
                       <img src="assets/chart-candle.svg" alt="" width="16" height="16" />
                     </button>
                   </div>
@@ -176,6 +178,26 @@
     requestAnimationFrame(() => indicator.classList.add('is-ready'));
   </script>
   <script src="chart.js"></script>
+  <script>
+    // Line / candlestick toggle: the chosen icon turns white, the other grey
+    const chartBtns = [...document.querySelectorAll('.chart-type-btn')];
+    chartBtns.forEach((btn) => btn.addEventListener('click', () => {
+      chartBtns.forEach((b) => {
+        const on = b === btn;
+        b.setAttribute('aria-pressed', String(on));
+        b.querySelector('img').src = on ? b.dataset.on : b.dataset.off;
+      });
+      window.liveChart.setMode(btn.dataset.chart);
+    }));
+
+    // Portfolio's on-page preview (?preview): switch between line and candles every 5s
+    if (new URLSearchParams(location.search).has('preview')) {
+      setInterval(() => {
+        chartBtns.find((b) => b.getAttribute('aria-pressed') === 'false').click();
+      }, 5000);
+    }
+  </script>
+  <script src="/demos/click-hint.js" data-target="#candleBtn"></script>
   <script>
     // Device is 200px wide in a 380px-tall frame (439px in Figma) and scales with the frame height
     const PHONE_SCALE = 200 / 439;
