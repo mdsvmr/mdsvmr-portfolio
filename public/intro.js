@@ -1,7 +1,7 @@
 // Page reveal.
 // - Intro (first visit and every refresh): logo holds in the center, glides into the
-//   sidebar, then the main blocks rise + fade in one by one, followed by the menu.
-// - Page enter (navigating between pages): the main blocks rise + fade in one by one.
+//   sidebar, then the main blocks blur + fade in one by one, followed by the menu.
+// - Page enter (navigating between pages): the main blocks blur + fade in one by one.
 (function () {
   var root = document.documentElement;
   if (window.__introRedirect) return; // a refresh is redirecting to Index
@@ -13,13 +13,13 @@
   var HOLD_MS = 1000;
   var MOVE_MS = 1100;
   var EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
-  var FADE_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
   var MAIN_DELAY = 550; // first main item starts while the logo is settling
-  var MAIN_STEP = 110; // gap between main items
-  var MENU_GAP = 120; // pause between the last main item and the first menu item
-  var MENU_STEP = 70; // gap between menu items
-  var ITEM_MS = 800;
-  var RISE = "translateY(6px)";
+  var ITEM_MS = 600;
+  var MAIN_STEP = ITEM_MS * 0.1; // each block starts when the one above is 10% through
+  var MENU_GAP = 60; // pause between the last main item and the first menu item
+  var MENU_STEP = 50; // gap between menu items
+  var BLUR_EASE = "cubic-bezier(0.25, 0.46, 0.45, 0.94)"; // gentle ease-out, so the overlap reads as one flow
+  var BLUR = "blur(10px)"; // each block starts soft and sharpens in place
 
   var ENTER_DELAY = 120; // lets the previous page's content fade out first
 
@@ -60,8 +60,8 @@
 
   function rise(el, delay) {
     return el.animate(
-      [{ opacity: 0, transform: RISE }, { opacity: 1, transform: "none" }],
-      { duration: ITEM_MS, delay: delay, easing: FADE_EASE, fill: "both" }
+      [{ opacity: 0, filter: BLUR }, { opacity: 1, filter: "blur(0px)" }],
+      { duration: ITEM_MS, delay: delay, easing: BLUR_EASE, fill: "both" }
     );
   }
 
@@ -82,6 +82,7 @@
       el.getAnimations().forEach(function (a) { a.cancel(); });
       el.style.transform = "";
       el.style.opacity = "";
+      el.style.filter = "";
     });
   }
 
