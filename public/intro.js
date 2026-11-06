@@ -61,7 +61,9 @@
   function rise(el, delay) {
     return el.animate(
       [{ opacity: 0, filter: BLUR }, { opacity: 1, filter: "blur(0px)" }],
-      { duration: ITEM_MS, delay: delay, easing: BLUR_EASE, fill: "both" }
+      // "backwards": hidden while waiting, and the effect simply ends once the block is sharp.
+      // Holding the end state and cancelling it later made iOS Safari flash the blur again.
+      { duration: ITEM_MS, delay: delay, easing: BLUR_EASE, fill: "backwards" }
     );
   }
 
