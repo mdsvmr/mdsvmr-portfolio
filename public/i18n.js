@@ -15,7 +15,7 @@
     "index.currentDesc": "サプライと小売のデータを一つのインテリジェンスレイヤーに統合し、チームがより速く動き、より賢く成長できるようにします。",
     "index.past": "これまで",
     "index.pastList": '<a href="https://www.ezpairs.xyz/" class="link" target="_blank" rel="noopener">Ezpairs</a>、<a href="https://www.dipainhouse.com/" class="link" target="_blank" rel="noopener">Dipa Inhouse</a>、<a href="https://skilvul.com/" class="link" target="_blank" rel="noopener">Skilvul</a>、<a href="https://slabdsgn.com/" class="link" target="_blank" rel="noopener">Slab</a> など。',
-    "index.built": "最近つくったもの",
+    "index.built": "デスクから届いた、できたての作品",
     "index.cap1": "ライブ ライン／ローソク足チャート（1時間）",
     "index.cap3": "ジェネレーティブASCIIチャート",
     "index.cap4": "料金プランセレクター",
