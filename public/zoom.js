@@ -21,6 +21,96 @@
   var CAPTION_GAP = 16;
   var CAPTION_SPACE = 52; // gap + one 13px line + breathing room, kept clear below the media
 
+  // ---- Click sound -------------------------------------------------------
+  // A zoomed live demo plays a short, soft click when something clickable in it is
+  // pressed: by the user, or by the demo's pointing-hand hint (click-hint.js sends a
+  // "demo-hint-press" event). It is synthesized here, no audio file: a brief high
+  // noise tick for the "tek" plus a short falling sine for a little body. The sound
+  // lives on this page so it can start from the click that opened the zoom (browsers
+  // only allow audio after a user gesture).
+  var CLICKABLE = "button, a[href], input:not([type=hidden]), select, textarea, label, summary, " +
+    "[role=button], [role=switch], [role=tab], [role=checkbox], [role=radio]";
+  var audio = null;
+  var noise = null;
+
+  function unlockAudio() {
+    try {
+      if (!audio) {
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        audio = new Ctx();
+        var len = Math.ceil(audio.sampleRate * 0.03);
+        noise = audio.createBuffer(1, len, audio.sampleRate);
+        var data = noise.getChannelData(0);
+        for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      }
+      if (audio.state === "suspended") audio.resume();
+    } catch (e) {}
+  }
+
+  // Quick attack, exponential fall: the shape of a single click.
+  function envelope(param, t, attack, decay, peak) {
+    param.setValueAtTime(0.0001, t);
+    param.linearRampToValueAtTime(peak, t + attack);
+    param.exponentialRampToValueAtTime(0.0001, t + attack + decay);
+  }
+
+  function clickSound() {
+    if (!audio || audio.state !== "running") return;
+    var t = audio.currentTime + 0.005;
+    var out = audio.createGain();
+    out.gain.value = 0.3;
+    out.connect(audio.destination);
+
+    var tick = audio.createBufferSource();
+    tick.buffer = noise;
+    var high = audio.createBiquadFilter();
+    high.type = "highpass";
+    high.frequency.value = 2800;
+    var tickGain = audio.createGain();
+    envelope(tickGain.gain, t, 0.0004, 0.011, 0.14);
+    tick.connect(high);
+    high.connect(tickGain);
+    tickGain.connect(out);
+    tick.start(t);
+    tick.stop(t + 0.03);
+
+    var body = audio.createOscillator();
+    body.type = "sine";
+    body.frequency.setValueAtTime(760, t);
+    body.frequency.exponentialRampToValueAtTime(520, t + 0.03);
+    var bodyGain = audio.createGain();
+    envelope(bodyGain.gain, t, 0.0007, 0.026, 0.22);
+    body.connect(bodyGain);
+    bodyGain.connect(out);
+    body.start(t);
+    body.stop(t + 0.05);
+  }
+
+  function isClickable(el, win) {
+    for (; el && el.nodeType === 1 && el !== el.ownerDocument.body; el = el.parentElement) {
+      var style = win.getComputedStyle(el);
+      if (style.pointerEvents === "none") return false; // static parts of a demo
+      if (el.matches(CLICKABLE)) return !el.matches(":disabled, [aria-disabled='true']");
+      if (style.cursor === "pointer") return true;
+    }
+    return false;
+  }
+
+  // Hooked again on every load, as some demos reload themselves (e.g. the pricing reset).
+  function listenForClicks(frame) {
+    frame.addEventListener("load", function () {
+      try {
+        var doc = frame.contentDocument;
+        var win = frame.contentWindow;
+        doc.addEventListener("pointerdown", function (e) {
+          if (e.button === 0 && isClickable(e.target, win)) clickSound();
+        }, true);
+        doc.addEventListener("demo-hint-press", clickSound);
+      } catch (e) {}
+    });
+  }
+
   // Space kept around the zoomed media. On the mobile layout it goes edge to edge;
   // from 1440px wide it fills the screen height with 80px above and below (no height cap).
   function gutter() {
@@ -111,6 +201,7 @@
       // usable version, on mobile the same preview stays (bigger) and can't be used
       if (demosUsable()) {
         if (frame.dataset.zoomSrc) frame.src = frame.dataset.zoomSrc;
+        listenForClicks(frame);
       } else {
         clone.classList.add("is-preview");
       }
@@ -289,6 +380,7 @@
 
   function open(source) {
     if (state) return;
+    if (demoFrame(source) && demosUsable()) unlockAudio(); // opening click = the user gesture audio needs
     // Hide the page scrollbar first, so both rects are measured in the final layout.
     document.documentElement.classList.add("is-zoomed");
     var from = source.getBoundingClientRect();

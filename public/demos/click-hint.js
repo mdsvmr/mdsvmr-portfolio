@@ -66,8 +66,9 @@
     await settle(glide);
     if (stopped) return;
 
-    // Press, with the ripple at the fingertip
+    // Press, with the ripple at the fingertip (and the portfolio zoom's click sound)
     ripple(p);
+    document.dispatchEvent(new CustomEvent("demo-hint-press"));
     await settle(cursor.animate(
       [{ transform: "scale(1)" }, { transform: "scale(0.84)", offset: 0.4 }, { transform: "scale(1)" }],
       { duration: 240, easing: "ease-out" }
