@@ -1,6 +1,7 @@
 // Portfolio zoom: shows that a demo can be used. 1s after load a pointing-hand cursor glides
 // onto the first thing to click, presses it with a small blue ripple and fades out, once.
-// Not in the on-page / mobile preview (?preview); stops at the first click.
+// Not in the on-page / mobile preview (?preview). It always plays to the end, even if the
+// user clicks meanwhile (the layer never catches clicks, so the demo still gets them).
 // Usage: <script src="/demos/click-hint.js" data-target="CSS selector"></script>
 (function () {
   if (new URLSearchParams(location.search).has("preview")) return;
@@ -12,7 +13,6 @@
   var SIZE = 40; // cursor box, on-screen px (pointing-hand.svg is drawn on a 32×32 grid)
   var TIP = { x: 12.4 * SIZE / 32, y: 8.2 * SIZE / 32 }; // fingertip, the click point
   var RIPPLE = 44; // ripple size at its widest, on-screen px
-  var stopped = false;
 
   var layer = document.createElement("div");
   layer.setAttribute("aria-hidden", "true");
@@ -64,7 +64,6 @@
       { duration: 650, easing: EASE, fill: "forwards" }
     );
     await settle(glide);
-    if (stopped) return;
 
     // Press, with the ripple at the fingertip (and the portfolio zoom's click sound)
     ripple(p);
@@ -73,22 +72,14 @@
       [{ transform: "scale(1)" }, { transform: "scale(0.84)", offset: 0.4 }, { transform: "scale(1)" }],
       { duration: 240, easing: "ease-out" }
     ));
-    if (stopped) return;
 
     await wait(380);
-    if (stopped) return;
     await settle(cursor.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: "ease-out", fill: "forwards" }));
   }
 
-  function stop() {
-    stopped = true;
-    layer.remove();
-  }
-  addEventListener("pointerdown", stop, { once: true });
-
   (async function () {
     await wait(1000);
-    if (!stopped) await tap();
-    stop();
+    await tap();
+    layer.remove();
   })();
 })();
