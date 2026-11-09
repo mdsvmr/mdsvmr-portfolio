@@ -372,15 +372,6 @@ p {
   background: var(--surface-muted);
 }
 
-/* About: photo under Connect (main gap + 8px = 40px desktop, 32px mobile) */
-.about__image {
-  display: block;
-  width: 100%;
-  height: auto;
-  margin-top: 8px;
-  background: var(--surface-muted);
-}
-
 /* Projects */
 .project {
   display: flex;
