@@ -714,17 +714,21 @@ p {
     font-size: 12px;
   }
 
-  /* Works and Frames: one column; Frames shows its left column first, then the right */
+  /* Works and Frames: one column; Frames follows its reading order (moments.js sets
+     each photo's `order`, the columns dissolve so the photos interleave) */
   .works {
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
   }
 
-  .moments,
-  .moments__col {
+  .moments {
     flex-direction: column;
     align-items: stretch;
     gap: 24px;
+  }
+
+  .moments__col {
+    display: contents;
   }
 
   /* About */

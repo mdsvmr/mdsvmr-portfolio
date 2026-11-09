@@ -305,9 +305,15 @@
   }
 
   function items() {
-    return Array.prototype.slice.call(document.querySelectorAll(SELECTOR)).filter(function (el) {
+    var list = Array.prototype.slice.call(document.querySelectorAll(SELECTOR)).filter(function (el) {
       return !el.classList.contains("zoom-media");
     });
+    // Frames: step in its reading order (moments.js), not column by column
+    var seq = function (el) { return Number(el.getAttribute("data-seq")); };
+    if (list.length && list.every(function (el) { return el.hasAttribute("data-seq"); })) {
+      list.sort(function (a, b) { return seq(a) - seq(b); });
+    }
+    return list;
   }
 
   // Which half of the zoomed media the pointer is over: -1 left (previous), 1 right (next).
