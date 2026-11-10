@@ -53,7 +53,7 @@
     "about.start": "プロジェクトを始める",
     "about.chat": "気軽にチャット",
     "about.connect": "つながる",
-    "about.connectList": '<a href="https://www.instagram.com/mdsvmr" class="link" target="_blank" rel="noopener">Instagram</a>、<a href="https://www.behance.net/fahrezasugiono" class="link" target="_blank" rel="noopener">Behance</a>、<a href="https://medium.com/@fahrezasugiono" class="link" target="_blank" rel="noopener">Medium</a>、<a href="https://www.linkedin.com/in/mokhammadfahreza/" class="link" target="_blank" rel="noopener">LinkedIn</a>。'
+    "about.connectList": '<a href="https://www.cosmos.so/mdsvmr" class="link" target="_blank" rel="noopener">Cosmos</a>、<a href="https://x.com/mdsvmr" class="link" target="_blank" rel="noopener">X</a>、<a href="https://www.behance.net/fahrezasugiono" class="link" target="_blank" rel="noopener">Behance</a>、<a href="https://medium.com/@fahrezasugiono" class="link" target="_blank" rel="noopener">Medium</a>、<a href="https://www.linkedin.com/in/mokhammadfahreza/" class="link" target="_blank" rel="noopener">LinkedIn</a>。'
   };
 
   var FADE_OUT_MS = 200;
