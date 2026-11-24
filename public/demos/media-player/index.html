@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mixtape Player</title>
+<style>
+  /* Figma: MDSVMR°— PORTFOLIO, node 1268:1234 "Media Player" (560 × 380.308) */
+  :root {
+    --stage-bg: #f4f5f6;
+    --white-60: rgba(255, 255, 255, 0.6);
+    --white-50: rgba(255, 255, 255, 0.5);
+    --white-40: rgba(255, 255, 255, 0.4);
+    --track-bg: rgba(120, 120, 128, 0.32);
+    --sf: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", "Helvetica Neue", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--stage-bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; }
+  img { display: block; max-width: none; }
+
+  /* The 560 × 380 frame scales to fill the viewport (Index box or zoom) */
+  .stage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 560px;
+    height: 380.308px;
+    transform: translate(-50%, -50%) scale(var(--s, 1));
+  }
+
+  /* Hold switch on top of the body */
+  .hold {
+    position: absolute;
+    left: calc(50% - 122.57px);
+    top: calc(50% - 79.11px);
+    width: 23.896px;
+    height: 2.078px;
+    transform: translate(-50%, -50%);
+    border-radius: 1.039px 1.039px 0 0;
+    background: linear-gradient(to right, #c3c5c6, #f0f0f0 50%, #c3c5c6);
+  }
+
+  /* Aluminium body */
+  .device {
+    position: absolute;
+    left: calc(50% - 0.49px);
+    top: calc(50% + 0.89px);
+    width: 347.013px;
+    height: 157.922px;
+    transform: translate(-50%, -50%);
+    border-radius: 24.935px;
+    overflow: hidden;
+  }
+  /* Body fill and its outside stroke: three stacked gradient strokes in Figma
+     (dark grey fading in toward the bottom, two light greys fading out), drawn as SVG
+     so each gradient keeps Figma's exact geometry. */
+  .shell {
+    position: absolute;
+    left: calc(50% - 0.49px);
+    top: calc(50% + 0.89px);
+    width: 347.013px;
+    height: 157.922px;
+    transform: translate(-50%, -50%);
+    overflow: visible;
+  }
+
+  /* ---------- Screen ---------- */
+  .screen {
+    position: absolute;
+    left: 12.47px;
+    top: 12.47px;
+    width: 187.013px;
+    height: 132.987px;
+    border-radius: 12.468px;
+    background: #000; /* the 3.117px black bezel (Figma inside stroke) */
+    font-family: var(--sf);
+    color: #fff;
+    font-feature-settings: "case" 1;
+  }
+
+  /* Display area inside the bezel: sits on black, so no light seam at its edge.
+     Its gradient comes from each song's cover (--bg-a / --bg-b, set per track) and
+     blends over when the song changes. */
+  @property --bg-a { syntax: "<color>"; inherits: false; initial-value: #26251b; }
+  @property --bg-b { syntax: "<color>"; inherits: false; initial-value: #4b3b2f; }
+  .screen__in {
+    position: absolute;
+    inset: 3.117px;
+    border-radius: 9.351px; /* 12.468 - 3.117 */
+    overflow: hidden;
+    --bg-a: #26251b;
+    --bg-b: #4b3b2f;
+    background-image: linear-gradient(213.2574deg, var(--bg-a) 15.462%, var(--bg-b) 77.944%);
+    transition: --bg-a 500ms ease, --bg-b 500ms ease;
+  }
+
+  .status {
+    position: absolute;
+    left: 9.35px;
+    top: 6.23px;
+    width: 162.078px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .status__time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3.911px;
+    height: 4.182px;
+    font-size: 5.685px;
+    font-weight: 490; /* Figma 590 (Semibold): browsers draw SF a touch heavier than Figma */
+    line-height: 7.078px;
+    white-space: nowrap;
+    font-feature-settings: normal;
+  }
+  .status__time span + span { color: var(--white-40); }
+  .levels { display: flex; align-items: center; gap: 2.35px; }
+  /* Cellular bars: one SVG so the 0.685px gaps stay even at any scale */
+  .cell { display: block; width: 5.971px; height: 4.407px; }
+  .wifi { width: 5.68px; height: 4.211px; }
+  .battery { width: 8.617px; height: 4.015px; }
+
+  .art {
+    position: absolute;
+    left: 9.35px;
+    top: 18.7px;
+    width: 62.338px;
+    height: 62.338px;
+    border-radius: 6.234px;
+    box-shadow: 0 4.156px 8.312px 0 rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+  }
+  .art img { width: 100%; height: 100%; object-fit: cover; }
+
+  .meta {
+    position: absolute;
+    left: 84.16px;
+    top: 33.25px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3.117px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  /* Long names stop at the screen's right margin (9.35px, like the left) with an ellipsis */
+  .meta { max-width: calc(100% - 84.16px - 9.35px); }
+  .meta > div { max-width: 100%; overflow: hidden; text-overflow: ellipsis; padding-bottom: 0.1em; margin-bottom: -0.1em; }
+  .meta__title { font-size: 12.468px; font-weight: 480; letter-spacing: -0.374px; } /* Figma 510 (Medium), see above */
+  .meta__album { font-size: 8.312px; font-weight: 400; letter-spacing: -0.2494px; }
+  .meta__artist { font-size: 7.273px; font-weight: 400; letter-spacing: -0.2182px; color: var(--white-40); }
+
+  .bottom {
+    position: absolute;
+    left: 9.35px;
+    top: 92.47px;
+    width: 162.078px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5.195px;
+  }
+  .times {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 6.234px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.0329px;
+    color: var(--white-60);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .controls { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 4.156px; }
+  .track {
+    position: relative;
+    width: 162.078px;
+    height: 3.117px;
+    border-radius: 7.987px;
+    background: var(--track-bg);
+    cursor: pointer;
+    touch-action: none;
+    outline: none;
+    transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1), background-color 100ms ease;
+  }
+  /* Hover (and while dragging): the grey bar gets a little more opaque */
+  @media (hover: hover) {
+    .track:hover { background: rgba(120, 120, 128, 0.44); }
+  }
+  .bottom.is-scrubbing .track { background: rgba(120, 120, 128, 0.44); }
+  /* Easier to grab than the 3px line itself */
+  .track::before {
+    content: "";
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: -4px;
+    bottom: -4px;
+  }
+  /* While pressed / dragged (like Apple Music): the bar grows a little and the times move out with it */
+  .times > span { transition: transform 200ms cubic-bezier(0.32, 0.72, 0, 1); }
+  .bottom.is-scrubbing .track { transform: scale(1.03, 1.45); }
+  .bottom.is-scrubbing .times > span:first-child { transform: translateX(-2.43px); }
+  .bottom.is-scrubbing .times > span:last-child { transform: translateX(2.43px); }
+  /* Rolling digits (like SwiftUI's numericText in Apple Music): only the digits that change
+     move, out one way and in the other, with a little fade and blur */
+  .times > span { display: inline-flex; }
+  .dg { position: relative; display: inline-block; }
+  .dg > i { display: inline-block; font-style: normal; }
+  .dg > i.is-out { position: absolute; left: 0; top: 0; }
+  .track:focus-visible { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5); }
+  /* The grey bar clips its content (Figma "clip content"), so the white fill always
+     stays inside it, whatever its width */
+  .track__bar {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    overflow: hidden;
+  }
+  .track__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0;
+    background: #fff;
+  }
+  .tabs { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .tab { width: 8.312px; height: 8.312px; border-radius: 1.781px; overflow: hidden; }
+  .tab svg { display: block; width: 100%; height: 100%; }
+
+  /* ---------- Click wheel ---------- */
+  .wheel {
+    position: absolute;
+    left: 216.1px;
+    top: 21.82px;
+    width: 114.286px;
+    height: 114.286px;
+    border: 0.478px solid #000;
+    border-radius: 1037.922px;
+    overflow: hidden;
+  }
+  .wheel__base {
+    position: absolute;
+    left: -0.48px;
+    top: -0.48px;
+    width: 114.286px;
+    height: 114.286px;
+    border-radius: 951.429px;
+    background: #1c1c1c;
+    box-shadow: inset 0 3.81px 19.048px 0 #646464;
+  }
+  .wheel__lines {
+    position: absolute;
+    left: -0.48px;
+    top: -0.48px;
+    width: 114.286px;
+    height: 114.286px;
+    pointer-events: none;
+  }
+  .wheel__lines img {
+    position: absolute;
+    left: -0.29%;
+    right: -0.29%;
+    top: -0.29%;
+    bottom: 0;
+    width: 100.58%;
+    height: 100.29%;
+  }
+
+  /* The four segments are the buttons; the icons sit on top and let clicks through */
+  .seg {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 120ms ease;
+  }
+  .seg--top    { clip-path: polygon(50% 50%, 0 0, 100% 0); }
+  .seg--right  { clip-path: polygon(50% 50%, 100% 0, 100% 100%); }
+  .seg--bottom { clip-path: polygon(50% 50%, 100% 100%, 0 100%); }
+  .seg--left   { clip-path: polygon(50% 50%, 0 100%, 0 0); }
+  .seg.is-pressed { background-color: rgba(255, 255, 255, 0.05); }
+  .seg:focus-visible { background-color: rgba(255, 255, 255, 0.07); }
+
+  .icon { position: absolute; pointer-events: none; transition: opacity 120ms ease; }
+  .icon img, .icon i { position: absolute; display: block; }
+  /* Icon brightness: the design's 60% white, full white while pressed */
+  .icon.is-lit { filter: brightness(1.67); }
+
+  .icon--prev, .icon--next {
+    top: 50%;
+    aspect-ratio: 1;
+    transform: translateY(-50%);
+  }
+  .icon--prev { left: 3.64%; right: 87.27%; }
+  .icon--next { left: 87.27%; right: 3.64%; }
+  .icon--prev .arrow { inset: 24.25% 20.84% 24.26% 36.92%; width: auto; height: auto; transform: scaleX(-1); }
+  .icon--prev .bar   { inset: 20.84% 70.84% 20.83% 20.83%; }
+  .icon--next .arrow { inset: 24.26% 36.93% 24.26% 20.83%; width: auto; height: auto; }
+  .icon--next .bar   { inset: 20.83% 20.83% 20.83% 70.83%; }
+  .icon .bar { background: var(--white-60); border-radius: 0.433px; }
+
+  .icon--shuffle {
+    left: 50%;
+    top: 3.64%;
+    bottom: 88.18%;
+    width: 9.351px;
+    transform: translateX(-50%);
+  }
+  .icon--shuffle img { inset: 8.31% 3.71% 6.71% 4.15%; width: auto; height: auto; }
+
+  .icon--playpause {
+    left: 50%;
+    bottom: 4.16px;
+    width: 16.624px;
+    height: 8.312px;
+    transform: translateX(-50%);
+  }
+  .icon--playpause .play { left: 0; top: 0; width: 8.312px; height: 8.312px; }
+  .icon--playpause .pause { left: 8.312px; top: 0; width: 8.312px; height: 8.312px; }
+  .pause i { background: var(--white-60); border-radius: 0.693px; }
+  .pause i:nth-child(1) { inset: 12.51% 58.34% 12.49% 16.66%; }
+  .pause i:nth-child(2) { inset: 12.51% 16.67% 12.49% 58.33%; }
+
+  .center {
+    position: absolute;
+    left: calc(50% - 0.17px);
+    top: calc(50% - 0.17px);
+    width: 49.524px;
+    height: 49.524px;
+    transform: translate(-50%, -50%);
+  }
+  .center img {
+    position: absolute;
+    left: -38.46%;
+    right: -38.46%;
+    top: -23.08%;
+    bottom: -53.85%;
+    width: 176.92%;
+    height: 176.93%;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="hold" aria-hidden="true"></div>
+    <svg class="shell" viewBox="0 0 347.013 157.922" aria-hidden="true">
+      <defs>
+        <linearGradient id="g-fill" gradientUnits="userSpaceOnUse" x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform="matrix(135.01529 222.44937 -488.80326 152.47176 406.65685 -93.21675)">
+          <stop offset="0" stop-color="#f0f0f0"/><stop offset="1" stop-color="#9ea0a2"/>
+        </linearGradient>
+        <linearGradient id="g-dark" gradientUnits="userSpaceOnUse" x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform="matrix(55.66421 118.44155 -260.25975 62.86117 247.97218 8.04993)">
+          <stop offset="0" stop-color="#6a6c6d" stop-opacity="0"/><stop offset="1" stop-color="#6a6c6d"/>
+        </linearGradient>
+        <linearGradient id="g-light1" gradientUnits="userSpaceOnUse" x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform="matrix(174.09868 70.04608 -153.91705 196.60832 80.51157 -153.91651)">
+          <stop offset="0" stop-color="#cccccc"/><stop offset="1" stop-color="#cccccc" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="g-light2" gradientUnits="userSpaceOnUse" x1="0" y1="0.5" x2="1" y2="0.5" gradientTransform="matrix(-120.80319 84.05529 -184.70046 -136.42213 439.36326 53.77733)">
+          <stop offset="0" stop-color="#bdbdbd"/><stop offset="1" stop-color="#cccccc" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect width="347.013" height="157.922" rx="24.935" fill="url(#g-fill)"/>
+      <!-- outside stroke 0.519: centred on a rect grown by half the weight -->
+      <g fill="none" stroke-width="0.519">
+        <rect x="-0.2595" y="-0.2595" width="347.532" height="158.441" rx="25.1945" stroke="url(#g-dark)"/>
+        <rect x="-0.2595" y="-0.2595" width="347.532" height="158.441" rx="25.1945" stroke="url(#g-light1)"/>
+        <rect x="-0.2595" y="-0.2595" width="347.532" height="158.441" rx="25.1945" stroke="url(#g-light2)"/>
+      </g>
+    </svg>
+    <div class="device">
+      <!-- Screen -->
+      <div class="screen" aria-live="polite">
+       <div class="screen__in">
+        <div class="art"><img id="art" src="assets/cover.jpg" alt=""></div>
+
+        <div class="bottom">
+          <div class="times"><span id="elapsed">0:21</span><span id="remaining">-2:36</span></div>
+          <div class="controls">
+            <div class="track" id="track" role="slider" tabindex="0" aria-label="Song position" aria-valuemin="0"><div class="track__bar"><div class="track__fill" id="fill"></div></div></div>
+            <div class="tabs" aria-hidden="true">
+              <!-- list.bullet (SF Symbol, redrawn from the design at 1px grid) -->
+              <div class="tab">
+                <svg viewBox="0 0 8.312 8.312" fill="none">
+                  <g fill="rgba(255,255,255,0.5)"><circle cx="1.390" cy="2.160" r="0.45"/><circle cx="1.390" cy="4.000" r="0.45"/><circle cx="1.390" cy="5.840" r="0.45"/></g>
+                  <path d="M2.835 2.160H6.765M2.835 4.000H6.765M2.835 5.840H6.765" stroke="rgba(255,255,255,0.5)" stroke-width="0.59" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <!-- quote.bubble (SF Symbol, redrawn from the design at 1px grid) -->
+              <div class="tab">
+                <svg viewBox="0 0 8.312 8.312" fill="none">
+                  <path d="M2.035 1.605 H5.965 A0.535 0.535 0 0 1 6.500 2.140 V4.880 A0.535 0.535 0 0 1 5.965 5.415 H4.105 L2.780 6.395 V5.415 H2.035 A0.535 0.535 0 0 1 1.500 4.880 V2.140 A0.535 0.535 0 0 1 2.035 1.605 Z" stroke="rgba(255,255,255,0.5)" stroke-width="0.53" stroke-linejoin="round"/>
+                  <path d="M2.745 3.200 a0.43 0.43 0 1 1 0.86 0 a0.43 0.43 0 1 1 -0.86 0 z M3.605 3.200 c0.02 0.5 -0.2 0.86 -0.62 1.06 l-0.1 -0.15 c0.26 -0.16 0.36 -0.42 0.34 -0.66 z M4.265 3.200 a0.43 0.43 0 1 1 0.86 0 a0.43 0.43 0 1 1 -0.86 0 z M5.125 3.200 c0.02 0.5 -0.2 0.86 -0.62 1.06 l-0.1 -0.15 c0.26 -0.16 0.36 -0.42 0.34 -0.66 z" fill="rgba(255,255,255,0.5)"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta">
+          <div class="meta__title" id="title">butterflies.</div>
+          <div class="meta__album" id="album">Icon</div>
+          <div class="meta__artist" id="artist">Brent Faiyaz</div>
+        </div>
+
+        <div class="status" aria-hidden="true">
+          <div class="status__time"><span id="clock">9:41</span><span>Music</span></div>
+          <div class="levels">
+            <svg class="cell" viewBox="0 0 5.971 4.407" fill="#fff"><rect x="0" y="2.546" width="0.979" height="1.861" rx="0.4895"/><rect x="1.664" y="1.860" width="0.979" height="2.547" rx="0.4895"/><rect x="3.328" y="1.175" width="0.979" height="3.232" rx="0.4895"/><rect x="4.992" y="0.392" width="0.979" height="4.015" rx="0.4895"/></svg>
+            <img class="wifi" src="assets/wifi.svg" alt="">
+            <img class="battery" src="assets/battery.svg" alt="">
+          </div>
+        </div>
+       </div>
+      </div>
+
+      <!-- Click wheel -->
+      <div class="wheel">
+        <div class="wheel__base"></div>
+        <div class="wheel__lines"><img src="assets/wheel.svg" alt=""></div>
+
+        <button type="button" class="seg seg--top" id="btn-shuffle" data-action="shuffle" aria-label="Shuffle: play a random song"></button>
+        <button type="button" class="seg seg--right" id="btn-next" data-action="next" aria-label="Next track"></button>
+        <button type="button" class="seg seg--bottom" id="btn-play" data-action="play" aria-label="Play"></button>
+        <button type="button" class="seg seg--left" id="btn-prev" data-action="prev" aria-label="Previous track"></button>
+
+        <div class="icon icon--prev" data-icon="prev"><img class="arrow" src="assets/skip-arrow.svg" alt=""><i class="bar"></i></div>
+        <div class="icon icon--next" data-icon="next"><img class="arrow" src="assets/skip-arrow.svg" alt=""><i class="bar"></i></div>
+        <div class="icon icon--playpause" id="icon-play" data-icon="play">
+          <img class="play" src="assets/play.svg" alt="">
+          <div class="pause" style="position:absolute"><i></i><i></i></div>
+        </div>
+        <div class="icon icon--shuffle" data-icon="shuffle"><img src="assets/shuffle.svg" alt=""></div>
+
+        <div class="center" aria-hidden="true"><img src="assets/center.svg" alt=""></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    // ---------- Fit the 560 × 380 frame to the viewport ----------
+    const stage = document.querySelector('.stage');
+    const fit = () => {
+      if (!innerWidth || !innerHeight) return;
+      stage.style.setProperty('--s', Math.min(innerWidth / 560, innerHeight / 380.308));
+    };
+    fit();
+    addEventListener('resize', fit);
+
+    // ---------- Tracks ----------
+    // Add songs here: { title, album, artist, cover, src, duration }.
+    // `src` is the audio file; `duration` (seconds) is used until the file's own length
+    // is known, and for the silent on-page preview, which never loads the audio.
+    // `bg`: the screen gradient, taken from the cover's dark and mid tones and brought to
+    // the same brightness as the first song's (so white text reads the same on every song).
+    const TRACKS = [
+      { title: 'butterflies.', album: 'Icon', artist: 'Brent Faiyaz',
+        cover: 'assets/cover.jpg', src: 'assets/music/butterflies.m4a', duration: 248.4, bg: ['#26251b', '#4b3b2f'] },
+      { title: 'NUMB', album: 'BELOVED', artist: 'GIVĒON',
+        cover: 'assets/cover-2.jpg', src: 'assets/music/numb.m4a', duration: 198.9, bg: ['#1d2727', '#3a3d39'] },
+      { title: 'dark days', album: 'american dream', artist: '21 Savage, Mariah the Scientist',
+        cover: 'assets/cover-3.jpg', src: 'assets/music/dark-days.m4a', duration: 296.7, bg: ['#2a2421', '#483a31'] },
+      { title: 'LOVE', album: 'DAMN', artist: 'Kendrick Lamar, Zacari',
+        cover: 'assets/cover-4.jpg', src: 'assets/music/love.m4a', duration: 213.5, bg: ['#431c22', '#4c373e'] },
+      { title: 'Intimidated', album: 'Intimidated', artist: 'KAYTRANADA, H.E.R.',
+        cover: 'assets/cover-5.jpg', src: 'assets/music/intimidated.m4a', duration: 207.9, bg: ['#26241f', '#413c33'] },
+      { title: 'How Many Drinks?', album: 'Kaleidoscope Dream', artist: 'Miguel',
+        cover: 'assets/cover-6.jpg', src: 'assets/music/how-many-drinks.m4a', duration: 273.1, bg: ['#262322', '#443a3b'] },
+      { title: 'Conceited', album: 'SOS', artist: 'SZA',
+        cover: 'assets/cover-7.jpg', src: 'assets/music/conceited.m4a', duration: 151.5, bg: ['#082850', '#1a4263'] },
+      // Burning and Tiramisu have near-black covers, so their colours come from the lit parts.
+      { title: 'Burning', album: 'Born in the Wild', artist: 'Tems',
+        cover: 'assets/cover-8.jpg', src: 'assets/music/burning.m4a', duration: 175.3, bg: ['#441c11', '#5d3426'] },
+      { title: 'Out The Window', album: 'Kehlani', artist: 'Kehlani',
+        cover: 'assets/cover-9.jpg', src: 'assets/music/out-the-window.m4a', duration: 270.5, bg: ['#3d1e1a', '#623325'] },
+      { title: 'Tiramisu', album: 'OCTANE', artist: 'Don Toliver',
+        cover: 'assets/cover-10.jpg', src: 'assets/music/tiramisu.m4a', duration: 139.0, bg: ['#272420', '#403b37'] },
+    ];
+
+    // Status bar clock: current time in WIB (GMT+7), 24-hour, e.g. 9:41 or 21:41.
+    const clockEl = document.getElementById('clock');
+    const clockFmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jakarta', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' });
+    function tickClock() {
+      clockEl.textContent = clockFmt.format(new Date()).replace(/^0(?=\d)/, '');
+      setTimeout(tickClock, 60000 - (Date.now() % 60000) + 50); // next minute change
+    }
+    tickClock();
+
+    const PREVIEW = new URLSearchParams(location.search).has('preview'); // portfolio's on-page preview
+    // Zoomed: fetch the other covers up front so skipping shows them straight away
+    // Fetch the other covers up front so changing songs shows them straight away
+    (PREVIEW ? TRACKS.slice(1, 3) : TRACKS.slice(1)).forEach((t) => { new Image().src = t.cover; });
+
+    const $ = (id) => document.getElementById(id);
+    const el = {
+      art: $('art'), title: $('title'), album: $('album'), artist: $('artist'),
+      elapsed: $('elapsed'), remaining: $('remaining'), fill: $('fill'),
+      play: $('btn-play'), shuffle: $('btn-shuffle'), track: $('track'), bottom: document.querySelector('.bottom'),
+      screen: document.querySelector('.screen__in'),
+    };
+    const TRACK_W = 162.078;
+
+    let index = 0;
+    // On-page preview (silent): songs 1, 2 and 3 play 5s each, then back to song 1, on repeat;
+    // each starts a little way in: song 1 at 0:21 (as in the design), song 2 at 1:32, song 3 at 3:40.
+    // Zoomed: starts at 0:00, paused, until the user presses play.
+    const PREVIEW_FROM = 21;
+    let position = PREVIEW ? PREVIEW_FROM : 0;
+    let playing = false;
+    let audio = null;
+    let lastTick = 0;
+
+    const fmt = (s) => {
+      s = Math.max(0, Math.floor(s));
+      return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    };
+    const ready = () => audio && audio.readyState >= 1; // length known, seeking works
+    const duration = () => (ready() && isFinite(audio.duration) ? audio.duration : TRACKS[index].duration);
+    const now = () => (ready() ? audio.currentTime : position);
+
+    let scrub = null; // seconds shown while the bar is pressed / dragged (the song plays on)
+
+    // ---------- Rolling digits ----------
+    const ROLL_MS = 260;
+    const ROLL_EASE = 'cubic-bezier(0.32, 0.72, 0, 1)';
+    const ROLL_Y = 0.75;  // em
+    const ROLL_BLUR = 'blur(0.12em)';
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const glyph = (ch) => { const i = document.createElement('i'); i.textContent = ch; return i; };
+
+    // Only seeking (click / drag / keys on the bar) rolls the digits; normal playback just
+    // changes them, as before.
+    function roll(label, text, value, animate) {
+      const prev = label.dataset.text;
+      if (prev === text) return;
+      const up = !(value < Number(label.dataset.value)); // growing: new digit comes up from below
+      label.dataset.text = text;
+      label.dataset.value = String(value);
+      // First paint, or a different length (e.g. 9:59 -> 10:00): just set the digits
+      if (prev === undefined || prev.length !== text.length) {
+        label.textContent = '';
+        for (const ch of text) {
+          const slot = document.createElement('span');
+          slot.className = 'dg';
+          slot.appendChild(glyph(ch));
+          label.appendChild(slot);
+        }
+        return;
+      }
+      const slots = label.children;
+      for (let k = 0; k < text.length; k++) {
+        if (text[k] === prev[k]) continue;
+        const slot = slots[k];
+        slot.querySelectorAll('.is-out').forEach((n) => n.remove()); // a newer change wins
+        const old = slot.firstElementChild;
+        const next = glyph(text[k]);
+        if (!animate || reduceMotion || !old) { slot.textContent = ''; slot.appendChild(next); continue; }
+        old.classList.add('is-out');
+        old.getAnimations().forEach((a) => a.cancel());
+        old.animate(
+          [{ transform: 'translateY(0)', opacity: 1, filter: 'blur(0)' },
+           { transform: 'translateY(' + (up ? -ROLL_Y : ROLL_Y) + 'em)', opacity: 0, filter: ROLL_BLUR }],
+          { duration: ROLL_MS, easing: ROLL_EASE, fill: 'forwards' }
+        ).onfinish = () => old.remove();
+        slot.appendChild(next);
+        next.animate(
+          [{ transform: 'translateY(' + (up ? ROLL_Y : -ROLL_Y) + 'em)', opacity: 0, filter: ROLL_BLUR },
+           { transform: 'translateY(0)', opacity: 1, filter: 'blur(0)' }],
+          { duration: ROLL_MS, easing: ROLL_EASE }
+        );
+      }
+    }
+
+    function renderTime(animate) {
+      const d = duration();
+      const t = Math.min(scrub !== null ? scrub : now(), d);
+      roll(el.elapsed, fmt(t), t, animate === true);
+      roll(el.remaining, '-' + fmt(d - Math.floor(t)), d - t, animate === true); // the two always add up to the length
+      el.fill.style.width = (Math.min(1, t / d) * TRACK_W) + 'px';
+      el.track.setAttribute('aria-valuemax', String(Math.round(d)));
+      el.track.setAttribute('aria-valuenow', String(Math.floor(t)));
+      el.track.setAttribute('aria-valuetext', fmt(t) + ' of ' + fmt(d));
+    }
+
+    // Jump the song to `t` seconds
+    function seek(t) {
+      const d = duration();
+      position = Math.max(0, Math.min(t, d - 0.25));
+      if (ready()) audio.currentTime = position;
+      renderTime(true);
+    }
+
+    // The audio element for the current track (zoomed demo only; the preview stays silent
+    // and doesn't download the song).
+    function attach(tr) {
+      if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); audio = null; }
+      if (!tr.src || PREVIEW) return;
+      const a = new Audio();
+      a.preload = 'metadata';
+      a.addEventListener('loadedmetadata', () => {
+        if (a !== audio) return;
+        a.currentTime = Math.min(position, a.duration || position); // resume where the screen says
+        renderTime();
+      });
+      a.addEventListener('timeupdate', () => { if (a === audio) position = a.currentTime; });
+      a.addEventListener('ended', () => { if (a === audio) next(true); });
+      a.src = tr.src;
+      audio = a;
+    }
+
+    function load(i, keepPlaying) {
+      index = (i + TRACKS.length) % TRACKS.length;
+      const tr = TRACKS[index];
+      el.title.textContent = tr.title;
+      el.album.textContent = tr.album;
+      el.artist.textContent = tr.artist;
+      if (el.art.getAttribute('src') !== tr.cover) el.art.src = tr.cover;
+      el.screen.style.setProperty('--bg-a', tr.bg[0]);
+      el.screen.style.setProperty('--bg-b', tr.bg[1]);
+      position = 0;
+      attach(tr);
+      renderTime();
+      if (keepPlaying) start(); else stop();
+    }
+
+    function start() {
+      playing = true;
+      el.play.setAttribute('aria-label', 'Pause');
+      if (audio) {
+        audio.preload = 'auto';
+        audio.play().catch(() => { if (playing) stop(); }); // blocked by the browser: show paused
+      }
+      lastTick = performance.now();
+      if (!rafId) rafId = requestAnimationFrame(tick); // one loop only, even when songs change
+    }
+    function stop() {
+      playing = false;
+      el.play.setAttribute('aria-label', 'Play');
+      if (audio) audio.pause();
+    }
+    let rafId = 0;
+    function tick(t) {
+      rafId = 0;
+      if (!playing) return;
+      if (!audio) {
+        position += (t - lastTick) / 1000;
+        if (position >= duration()) {
+          if (PREVIEW) position = PREVIEW_FROM; // preview: back to 0:21 and on again
+          else { next(true); return; }
+        }
+      }
+      lastTick = t;
+      renderTime();
+      rafId = requestAnimationFrame(tick);
+    }
+
+    function next(auto) {
+      load(index + 1, playing || auto === true);
+    }
+    // Shuffle: jump to a random other song (keeps playing if it was)
+    function shuffleTo() {
+      if (TRACKS.length < 2) return;
+      let i;
+      do { i = Math.floor(Math.random() * TRACKS.length); } while (i === index);
+      load(i, playing);
+    }
+    function prev() {
+      if (now() > 3 || TRACKS.length === 1) {    // like iPod: restart the song first
+        position = 0;
+        if (ready()) audio.currentTime = 0;
+        renderTime();
+        return;
+      }
+      load(index - 1, playing);
+    }
+
+    const actions = {
+      play: () => (playing ? stop() : start()),
+      next: () => next(false),
+      prev: () => prev(),
+      shuffle: () => shuffleTo(),
+    };
+
+    // Pressed look: the segment lightens and its icon goes full white for a moment
+    const light = (name, on) => document.querySelector('[data-icon="' + name + '"]').classList.toggle('is-lit', on);
+    // A trackpad tap sends press and release almost together, so the pressed look is held
+    // for at least PRESS_MIN_MS after it starts; a long press keeps it until release.
+    const PRESS_MIN_MS = 180;
+    document.querySelectorAll('.seg').forEach((seg) => {
+      const name = seg.dataset.action;
+      let since = 0, holding = false, timer = 0;
+      const unlight = () => {
+        seg.classList.remove('is-pressed');
+        light(name, false);
+      };
+      const press = () => {
+        clearTimeout(timer);
+        since = performance.now();
+        seg.classList.add('is-pressed');
+        light(name, true);
+      };
+      const release = () => {
+        clearTimeout(timer);
+        timer = setTimeout(unlight, Math.max(0, PRESS_MIN_MS - (performance.now() - since)));
+      };
+      seg.addEventListener('pointerdown', (e) => { if (e.button === 0) { holding = true; press(); } });
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) =>
+        seg.addEventListener(ev, () => { if (holding) { holding = false; release(); } }));
+      seg.addEventListener('click', () => {
+        if (!seg.classList.contains('is-pressed')) { press(); release(); } // keyboard / missed pointerdown
+        actions[name]();
+      });
+    });
+    // ---------- Seek bar: click anywhere, or drag; the song moves on release ----------
+    const timeAt = (clientX) => {
+      const r = el.track.getBoundingClientRect(); // includes the press scale, so it follows the bar
+      return Math.max(0, Math.min(1, (clientX - r.left) / r.width)) * duration();
+    };
+    let scrubId = null;
+    el.track.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      scrubId = e.pointerId;
+      try { el.track.setPointerCapture(e.pointerId); } catch (err) {} // keep following outside the bar
+      el.bottom.classList.add('is-scrubbing');
+      scrub = timeAt(e.clientX);
+      renderTime(true);
+      e.preventDefault();
+    });
+    el.track.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== scrubId) return;
+      scrub = timeAt(e.clientX);
+      renderTime(true);
+    });
+    const endScrub = (e, apply) => {
+      if (e.pointerId !== scrubId) return;
+      scrubId = null;
+      el.bottom.classList.remove('is-scrubbing');
+      const t = scrub;
+      scrub = null;
+      if (apply && t !== null) seek(t); else renderTime(true);
+    };
+    el.track.addEventListener('pointerup', (e) => endScrub(e, true));
+    el.track.addEventListener('pointercancel', (e) => endScrub(e, false));
+    el.track.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 15 : 5;
+      if (e.key === 'ArrowRight') seek(now() + step);
+      else if (e.key === 'ArrowLeft') seek(now() - step);
+      else if (e.key === 'Home') seek(0);
+      else return;
+      e.preventDefault();
+      e.stopPropagation(); // not next / previous track
+    });
+
+    document.addEventListener('keydown', (e) => {
+      // Through the buttons, so the wheel shows the press too
+      if (e.key === ' ' && e.target === document.body) { e.preventDefault(); $('btn-play').click(); }
+      else if (e.key === 'ArrowRight') $('btn-next').click();
+      else if (e.key === 'ArrowLeft') $('btn-prev').click();
+    });
+
+    attach(TRACKS[0]);
+    renderTime();
+
+    // On-page preview: plays on its own, silently
+    if (PREVIEW) {
+      const PREVIEW_STARTS = [PREVIEW_FROM, 92, 220]; // seconds into songs 1, 2, 3
+      const PREVIEW_EACH_MS = 5000;
+      let n = 0;
+      start();
+      setInterval(() => {
+        n = (n + 1) % PREVIEW_STARTS.length;
+        load(n, true);
+        position = PREVIEW_STARTS[n];
+        renderTime();
+      }, PREVIEW_EACH_MS);
+    }
+  })();
+  </script>
+  <script src="/demos/click-hint.js" data-target="#icon-play"></script>
+</body>
+</html>
