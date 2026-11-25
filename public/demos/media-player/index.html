@@ -162,6 +162,105 @@
   .meta__album { font-size: 8.312px; font-weight: 400; letter-spacing: -0.2494px; }
   .meta__artist { font-size: 7.273px; font-weight: 400; letter-spacing: -0.2182px; color: var(--white-40); }
 
+  /* ---------- Lyrics view (quote icon, bottom right) ----------
+     Figma (player at 380px, ÷ 380 / 347.013 here): the cover shrinks to 27.31 in the
+     top left, the title block goes, and the lyrics sit to the right of the cover:
+     10.24 / line height 11, 6.82 between lines, the current one white, the others
+     white 40% with a 0.57 blur. */
+  .meta, .lyrics { transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1), opacity 300ms ease; }
+  /* Kept on their own layers all the time: otherwise the browser redraws the text when a
+     fade ends, and it lands ~1px off with slightly different spacing. */
+  .meta, .lyrics { will-change: transform, opacity; }
+  /* The cover zooms between its two sizes. It stays on its own layer the whole time
+     (will-change), so the browser never swaps the moving image for a freshly drawn one
+     when the zoom ends, which showed as a ~1% extra grow / shrink at the end. */
+  .art {
+    transform-origin: 0 0;
+    will-change: transform;
+    transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .screen__in.is-lyrics .art { transform: translateY(-2.51px) scale(0.3994); } /* 62.338 → 24.898, top 16.19 */
+  /* ---------- Song grid (list icon, bottom left) ----------
+     Figma (÷ 380 / 347.013): the 10 covers at 27.31, 5 across from the small cover's
+     spot, 37.31 apart across and 38 down. The song playing is the cover itself, moved
+     onto its square; the others are at 50% with no shadow. */
+  .grid {
+    position: absolute;
+    left: 9.35px;
+    top: 16.19px;
+    width: 160.966px;  /* 4 × 34.017 + 24.898 */
+    height: 59.548px;  /* 34.65 + 24.898 */
+    pointer-events: none;
+  }
+  .screen__in.is-list .grid { pointer-events: auto; }
+  /* Each square is drawn exactly like the main cover (62.338 zoomed to 0.3994 on its own
+     layer), so the playing cover and its square line up to the pixel when they swap. */
+  .grid__item {
+    position: absolute;
+    width: 62.338px;
+    height: 62.338px;
+    padding: 0;
+    border-radius: 6.234px;
+    overflow: hidden;
+    transform: scale(0.3994);
+    transform-origin: 0 0;
+    will-change: transform;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 300ms ease;
+  }
+  .grid__item img { width: 100%; height: 100%; object-fit: cover; }
+  .screen__in.is-list .grid__item { opacity: 0.5; }
+  /* While the grid is open, the playing song's own square is the cover (the big cover
+     only flies in and out), so changing songs never changes its size. */
+  .screen__in.is-list .grid__item.is-current {
+    opacity: 1;
+    z-index: 1;
+    box-shadow: 0 4.156px 8.312px 0 rgba(0, 0, 0, 0.3); /* the cover's shadow, zoomed with it */
+  }
+  .screen__in.is-list .art { visibility: hidden; }
+  @media (hover: hover) { .grid__item:not(.is-current):hover { opacity: 0.75; } }
+  .grid__item:focus-visible { outline: 2.5px solid rgba(255, 255, 255, 0.6); outline-offset: 2.5px; } /* 1px after the zoom */
+  .screen__in.is-list .meta,
+  .screen__in.is-lyrics .meta { opacity: 0; transform: translateY(-4px); pointer-events: none; }
+  .lyrics {
+    position: absolute;
+    left: 45.45px;
+    top: 16.19px; /* level with the top of the small cover (18.7 - 2.51) */
+    width: 125.98px;
+    height: 71.81px; /* ends just above the times */
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(transparent, #000 4px, #000 calc(100% - 4px), transparent);
+    mask-image: linear-gradient(transparent, #000 4px, #000 calc(100% - 4px), transparent);
+  }
+  .screen__in.is-lyrics .lyrics { opacity: 1; transform: none; pointer-events: auto; }
+  .lyrics__list { transition: transform 520ms cubic-bezier(0.32, 0.72, 0, 1); }
+  .lyrics__list.is-instant { transition: none; }
+  .lyrics__line {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin-bottom: 6.22px;
+    font-size: 9.351px;
+    font-weight: 480;
+    line-height: 10.03px;
+    letter-spacing: -0.28px;
+    color: #fff;
+    opacity: 0.4;
+    filter: blur(0.52px);
+    cursor: pointer;
+    transition: opacity 320ms ease, filter 320ms ease;
+  }
+  .lyrics__line.is-on { opacity: 1; filter: none; }
+  .lyrics__line.is-note { cursor: default; filter: none; }
+  .tab--toggle { padding: 0; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 200ms ease; }
+  @media (hover: hover) { .tab--toggle:hover { color: rgba(255, 255, 255, 0.65); } }
+  .tab--toggle[aria-pressed="true"] { color: #fff; }
+  .tab--toggle:focus-visible { outline: 1px solid rgba(255, 255, 255, 0.5); }
+
   .bottom {
     position: absolute;
     left: 9.35px;
@@ -390,6 +489,7 @@
     transform-origin: 0 0;
     pointer-events: none;
   }
+
 </style>
 </head>
 <body>
@@ -428,29 +528,27 @@
           <div class="times"><span id="elapsed">0:21</span><span id="remaining">-2:36</span></div>
           <div class="controls">
             <div class="track" id="track" role="slider" tabindex="0" aria-label="Song position" aria-valuemin="0"><div class="track__bar"><div class="track__fill" id="fill"></div></div></div>
-            <div class="tabs" aria-hidden="true">
-              <!-- list.bullet (SF Symbol, redrawn from the design at 1px grid) -->
-              <div class="tab">
-                <svg viewBox="0 0 8.312 8.312" fill="none">
-                  <g fill="rgba(255,255,255,0.5)"><circle cx="1.390" cy="2.160" r="0.45"/><circle cx="1.390" cy="4.000" r="0.45"/><circle cx="1.390" cy="5.840" r="0.45"/></g>
-                  <path d="M2.835 2.160H6.765M2.835 4.000H6.765M2.835 5.840H6.765" stroke="rgba(255,255,255,0.5)" stroke-width="0.59" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <!-- quote.bubble (SF Symbol, redrawn from the design at 1px grid) -->
+            <div class="tabs">
+              <!-- list.bullet: the design's exported icon (1.svg); opens the song grid -->
+              <button type="button" class="tab tab--toggle" id="btn-list" aria-pressed="false" aria-label="All songs">
+                <svg viewBox="0 0 30 30" fill="currentColor" aria-hidden="true"><path d="M4.2334 9.35156C3.37891 9.35156 2.69531 8.66797 2.69531 7.82568C2.69531 6.97119 3.37891 6.2876 4.2334 6.2876C5.08789 6.2876 5.77148 6.97119 5.77148 7.82568C5.77148 8.66797 5.08789 9.35156 4.2334 9.35156ZM9.62891 8.80225C9.06738 8.80225 8.64014 8.375 8.64014 7.82568C8.64014 7.26416 9.06738 6.83691 9.62891 6.83691H26.3037C26.853 6.83691 27.2925 7.26416 27.2925 7.82568C27.2925 8.375 26.853 8.80225 26.3037 8.80225H9.62891ZM4.2334 16.7368C3.37891 16.7368 2.69531 16.0532 2.69531 15.1987C2.69531 14.3442 3.37891 13.6606 4.2334 13.6606C5.08789 13.6606 5.77148 14.3442 5.77148 15.1987C5.77148 16.0532 5.08789 16.7368 4.2334 16.7368ZM9.62891 16.1875C9.06738 16.1875 8.64014 15.748 8.64014 15.1987C8.64014 14.6494 9.06738 14.2222 9.62891 14.2222H26.3037C26.853 14.2222 27.2925 14.6494 27.2925 15.1987C27.2925 15.748 26.853 16.1875 26.3037 16.1875H9.62891ZM4.2334 24.1221C3.37891 24.1221 2.69531 23.4263 2.69531 22.584C2.69531 21.7295 3.37891 21.0459 4.2334 21.0459C5.08789 21.0459 5.77148 21.7295 5.77148 22.584C5.77148 23.4263 5.08789 24.1221 4.2334 24.1221ZM9.62891 23.5605C9.06738 23.5605 8.64014 23.1333 8.64014 22.584C8.64014 22.0225 9.06738 21.5952 9.62891 21.5952H26.3037C26.853 21.5952 27.2925 22.0225 27.2925 22.584C27.2925 23.1333 26.853 23.5605 26.3037 23.5605H9.62891Z"/></svg>
+              </button>
               <!-- Lossless badge: the design's exported icon + label -->
-              <div class="lossless">
+              <div class="lossless" aria-hidden="true">
                 <svg viewBox="0 0 200 107" fill="currentColor"><path d="M109.119 0C132.586 0 142.706 39.4027 151.173 65.377C155.639 46.7055 153.293 42.693 158.093 42.693C159.866 42.693 161.679 43.9101 161.679 46.117C161.679 46.2641 161.639 46.6654 161.559 47.2539L161.213 49.5945C160.266 55.8005 157.933 68.801 155.386 77.4948C175.972 131.623 191.266 60.3346 192.986 45.7693C193.239 43.6694 194.826 42.693 196.412 42.693C198.546 42.693 200.292 44.298 199.959 46.7189C196.266 70.2856 190.599 107 167.293 107C154.426 107 147.199 96.9019 141.479 85.3325C127.199 57.1915 120.626 9.93763 106.626 9.93763C102.133 9.93763 98.8129 14.6322 98.5862 14.6322C98.1595 14.6322 97.8262 12.7196 93.6395 7.47663C97.6262 2.90238 103.119 0 109.119 0ZM32.7732 0.0535001C69.4797 0.0535001 72.7463 97.2095 93.5195 97.2095C95.9595 97.2095 98.5862 95.7249 101.466 92.3678C103.053 95.0695 104.679 97.477 106.373 99.5902C102.226 104.338 97.0662 107 90.5996 107C67.3863 106.987 57.4131 67.9985 48.8398 41.6765C46.8131 50.1161 45.7598 57.7666 45.3598 61.1906C45.0931 63.3708 43.5065 64.3739 41.9065 64.3739C40.1198 64.3739 38.3198 63.1434 38.3198 60.9633L38.3598 60.455C39.5465 51.8014 41.9465 38.6939 44.6264 29.5588C41.0531 20.1695 36.5998 9.91087 30.0265 9.91087C16.7599 9.91087 9.15996 43.3484 7.02663 61.1906C6.7733 63.3708 5.17331 64.3739 3.57332 64.3739C1.79999 64.3739 0 63.1434 0 60.9633C0 60.8027 0.0133333 60.6289 0.0266665 60.455C3.77331 33.2503 10.7733 0.0535001 32.7732 0.0535001ZM70.8663 0C77.453 0 84.5196 3.45075 90.6262 11.5159C90.9596 11.9171 94.3729 17.2404 95.4529 19.0861C110.359 46.1705 117.573 97.3299 131.746 97.3299C134.199 97.3299 136.853 95.8051 139.786 92.3678C141.386 95.0695 143.013 97.477 144.693 99.5902C140.559 104.325 135.399 107 128.933 107C92.4396 106.987 88.4796 9.8975 68.373 9.8975C63.8397 9.8975 60.4797 14.6322 60.253 14.6322C59.8264 14.6322 59.493 12.7196 55.3064 7.47663C59.3997 2.782 64.933 0 70.8663 0Z"/></svg>
                 <span>Lossless</span>
               </div>
-              <div class="tab">
-                <svg viewBox="0 0 8.312 8.312" fill="none">
-                  <path d="M2.035 1.605 H5.965 A0.535 0.535 0 0 1 6.500 2.140 V4.880 A0.535 0.535 0 0 1 5.965 5.415 H4.105 L2.780 6.395 V5.415 H2.035 A0.535 0.535 0 0 1 1.500 4.880 V2.140 A0.535 0.535 0 0 1 2.035 1.605 Z" stroke="rgba(255,255,255,0.5)" stroke-width="0.53" stroke-linejoin="round"/>
-                  <path d="M2.745 3.200 a0.43 0.43 0 1 1 0.86 0 a0.43 0.43 0 1 1 -0.86 0 z M3.605 3.200 c0.02 0.5 -0.2 0.86 -0.62 1.06 l-0.1 -0.15 c0.26 -0.16 0.36 -0.42 0.34 -0.66 z M4.265 3.200 a0.43 0.43 0 1 1 0.86 0 a0.43 0.43 0 1 1 -0.86 0 z M5.125 3.200 c0.02 0.5 -0.2 0.86 -0.62 1.06 l-0.1 -0.15 c0.26 -0.16 0.36 -0.42 0.34 -0.66 z" fill="rgba(255,255,255,0.5)"/>
-                </svg>
-              </div>
+              <!-- quote.bubble: the design's exported icon (2.svg); opens the lyrics -->
+              <button type="button" class="tab tab--toggle" id="btn-lyrics" aria-pressed="false" aria-label="Lyrics">
+                <svg viewBox="0 0 30 30" fill="currentColor" aria-hidden="true"><path d="M9.05518 28.6021C8.20068 28.6021 7.72461 27.9917 7.72461 27.0518V23.8779H7.13867C3.50098 23.8779 1.54785 21.876 1.54785 18.2871V8.93652C1.54785 5.34766 3.50098 3.3457 7.13867 3.3457H22.8613C26.499 3.3457 28.4521 5.35986 28.4521 8.93652V18.2871C28.4521 21.8638 26.499 23.8779 22.8613 23.8779H15.0244L10.813 27.6255C10.0684 28.2847 9.65332 28.6021 9.05518 28.6021ZM9.55566 26.3682L13.4619 22.4863C13.9258 22.0103 14.2676 21.9126 14.9512 21.9126H22.8613C25.3149 21.9126 26.4868 20.6553 26.4868 18.2749V8.93652C26.4868 6.55615 25.3149 5.31104 22.8613 5.31104H7.13867C4.67285 5.31104 3.51318 6.55615 3.51318 8.93652V18.2749C3.51318 20.6553 4.67285 21.9126 7.13867 21.9126H8.64014C9.29932 21.9126 9.55566 22.1689 9.55566 22.8281V26.3682ZM9.104 12.3057C9.104 10.853 10.2026 9.83984 11.6675 9.83984C13.2544 9.83984 14.3286 11.0972 14.3286 12.7573C14.3286 15.8579 11.8506 17.3228 10.6177 17.3228C10.2759 17.3228 10.0195 17.0664 10.0195 16.7612C10.0195 16.4683 10.1538 16.2729 10.6055 16.1509C11.3989 15.9434 12.3389 15.2964 12.7905 14.2832H12.6929C12.3755 14.686 11.8628 14.7715 11.3501 14.7715C9.9707 14.7715 9.104 13.6973 9.104 12.3057ZM15.6958 12.3057C15.6958 10.853 16.7944 9.83984 18.2593 9.83984C19.8462 9.83984 20.9204 11.0972 20.9204 12.7573C20.9204 15.8579 18.4424 17.3228 17.2095 17.3228C16.8677 17.3228 16.6113 17.0664 16.6113 16.7612C16.6113 16.4683 16.7578 16.2729 17.1973 16.1509C17.9907 15.9434 18.9307 15.2964 19.3823 14.2832H19.2847C18.9673 14.686 18.4546 14.7715 17.9419 14.7715C16.5625 14.7715 15.6958 13.6973 15.6958 12.3057Z"/></svg>
+              </button>
             </div>
           </div>
         </div>
+
+        <div class="grid" id="grid" aria-label="All songs"></div>
+
+        <div class="lyrics" id="lyrics" aria-label="Lyrics"><div class="lyrics__list" id="lyrics-list"></div></div>
 
         <div class="meta">
           <div class="meta__title" id="title">butterflies.</div>
@@ -516,6 +614,7 @@
     </div>
   </div>
 
+  <script src="assets/lyrics.js"></script>
   <script>
   (() => {
     // ---------- Fit the 560 × 380 frame to the viewport ----------
@@ -576,6 +675,8 @@
       elapsed: $('elapsed'), remaining: $('remaining'), fill: $('fill'),
       play: $('btn-play'), shuffle: $('btn-shuffle'), track: $('track'), bottom: document.querySelector('.bottom'),
       screen: document.querySelector('.screen__in'),
+      listBtn: $('btn-list'), grid: $('grid'),
+      lyricsBtn: $('btn-lyrics'), lyrics: $('lyrics'), lyricsList: $('lyrics-list'),
     };
     const TRACK_W = 162.078;
 
@@ -659,6 +760,7 @@
       el.track.setAttribute('aria-valuemax', String(Math.round(d)));
       el.track.setAttribute('aria-valuenow', String(Math.floor(t)));
       el.track.setAttribute('aria-valuetext', fmt(t) + ' of ' + fmt(d));
+      syncLyrics();
     }
 
     // Jump the song to `t` seconds
@@ -698,6 +800,8 @@
       el.screen.style.setProperty('--bg-b', tr.bg[1]);
       position = 0;
       attach(tr);
+      if (lyricsOn) buildLyrics();
+      if (listOn) markGrid(); // swap squares in place, no glide
       renderTime();
       if (keepPlaying) start(); else stop();
     }
@@ -793,6 +897,156 @@
         actions[name]();
       });
     });
+
+    // ---------- Lyrics (quote icon) ----------
+    // Synced lyrics come from assets/lyrics.js (LRC text per song). The current line is
+    // white and sits in the middle of the box; the others are dimmed and slightly blurred.
+    const LYRICS_CENTER = 36.21; // the current line's middle, from the top of the box (Figma)
+    let lyricsOn = false;
+    let lines = [];   // [{ t, node }]
+    let lyricIdx = -2; // shown line (-1: before the first one)
+
+    // LRC text → [{ t, words }]. Plain lines without any times come back with t: null,
+    // in order (shown, but not followed).
+    const parseLrc = (text) => {
+      const out = [], plain = [];
+      for (const raw of (text || '').split(/\r?\n/)) {
+        const stamps = [...raw.matchAll(/\[(\d+):(\d+(?:[.:]\d+)?)\]/g)];
+        const words = raw.replace(/\[[^\]]*\]/g, '').trim();
+        if (!words) continue;
+        plain.push({ t: null, words });
+        for (const m of stamps) out.push({ t: Number(m[1]) * 60 + Number(m[2].replace(':', '.')), words });
+      }
+      return out.length ? out.sort((a, b) => a.t - b.t) : plain;
+    };
+    const songKey = (tr) => tr.src.split('/').pop().replace(/\.[^.]+$/, '');
+
+    function buildLyrics() {
+      el.lyricsList.textContent = '';
+      lyricIdx = -2;
+      const parsed = parseLrc((window.LYRICS || {})[songKey(TRACKS[index])]);
+      lines = parsed.map(({ t, words }) => {
+        const node = document.createElement('div');
+        node.className = 'lyrics__line';
+        node.textContent = words;
+        const line = { t, node };
+        node.addEventListener('click', () => {
+          if (line.t === null) return;
+          seek(line.t);
+          if (!playing) start();
+        });
+        el.lyricsList.appendChild(node);
+        return line;
+      });
+      if (!lines.length) {
+        const note = document.createElement('div');
+        note.className = 'lyrics__line is-note';
+        note.textContent = "Lyrics aren't available for this song.";
+        el.lyricsList.appendChild(note);
+      }
+      syncLyrics(true);
+    }
+
+    function syncLyrics(instant) {
+      if (!lyricsOn) return;
+      const nodes = el.lyricsList.children;
+      if (!nodes.length) return;
+      const t = now();
+      let i = -1;
+      while (i + 1 < lines.length && lines[i + 1].t !== null && lines[i + 1].t <= t + 0.15) i++;
+      if (i === lyricIdx && instant !== true) return;
+      if (lyricIdx >= 0 && lines[lyricIdx]) lines[lyricIdx].node.classList.remove('is-on');
+      lyricIdx = i;
+      if (i >= 0) lines[i].node.classList.add('is-on');
+      const focus = nodes[Math.max(0, i)];
+      const y = LYRICS_CENTER - (focus.offsetTop + focus.offsetHeight / 2);
+      el.lyricsList.classList.toggle('is-instant', instant === true || reduceMotion);
+      el.lyricsList.style.transform = 'translateY(' + y + 'px)';
+      if (instant === true) { void el.lyricsList.offsetHeight; el.lyricsList.classList.remove('is-instant'); }
+    }
+
+
+    function toggleLyrics(on) {
+      if (on && listOn) toggleList(false);
+      lyricsOn = on;
+      el.lyricsBtn.setAttribute('aria-pressed', String(on));
+      el.screen.classList.toggle('is-lyrics', on);
+      if (on) buildLyrics();
+    }
+    el.lyricsBtn.addEventListener('click', () => toggleLyrics(!lyricsOn));
+
+    // ---------- Song grid (list icon) ----------
+    // Opening: the playing song's square flies in from the big cover's spot and stays as the
+    // cover. Picking another song (here or on the wheel) swaps the squares in place.
+    // Closing: the big cover takes over from the square and zooms back.
+    const GRID_X = 34.017, GRID_Y = 34.65; // 37.305 and 38 in Figma
+    const ZOOM_MS = 380, ZOOM_EASE = 'cubic-bezier(0.4, 0, 0.2, 1)';
+    let listOn = false;
+    const gridItems = TRACKS.map((tr, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'grid__item';
+      b.style.left = (i % 5) * GRID_X + 'px';
+      b.style.top = Math.floor(i / 5) * GRID_Y + 'px';
+      b.setAttribute('aria-label', tr.title + ', ' + tr.artist);
+      const img = document.createElement('img');
+      img.src = tr.cover;
+      img.alt = '';
+      b.appendChild(img);
+      b.addEventListener('click', () => { if (i !== index) load(i, true); else if (!playing) start(); });
+      el.grid.appendChild(b);
+      return b;
+    });
+    const artBox = el.art.parentElement;
+    // Change something at once, with no fade or glide
+    const instantly = (nodes, change) => {
+      nodes.forEach((n) => { n.style.transition = 'none'; });
+      change();
+      nodes.forEach((n) => { void n.offsetWidth; n.style.transition = ''; });
+    };
+    // The big cover parked on the playing song's square (hidden while the grid is open)
+    const parkArt = () => {
+      artBox.style.transform = 'translate(' + (index % 5) * GRID_X + 'px, ' +
+        (Math.floor(index / 5) * GRID_Y - 2.51) + 'px) scale(0.3994)';
+    };
+    function markGrid() {
+      instantly([artBox, ...gridItems], () => {
+        gridItems.forEach((b, i) => {
+          b.classList.toggle('is-current', i === index);
+          b.setAttribute('aria-current', i === index ? 'true' : 'false');
+        });
+        if (listOn) parkArt();
+      });
+    }
+    function toggleList(on) {
+      if (on && lyricsOn) toggleLyrics(false);
+      if (on === listOn) return;
+      const cur = gridItems[index];
+      gridItems.forEach((b) => b.getAnimations().forEach((an) => an.cancel()));
+      listOn = on;
+      el.listBtn.setAttribute('aria-pressed', String(on));
+      if (on) {
+        // Fly the square in from wherever the big cover is now
+        const from = artBox.getBoundingClientRect();
+        markGrid();
+        instantly([cur], () => el.screen.classList.add('is-list'));
+        const to = cur.getBoundingClientRect();
+        const px = to.width / (62.338 * 0.3994); // screen px per CSS px
+        if (!reduceMotion) {
+          cur.animate(
+            [{ transform: 'translate(' + (from.left - to.left) / px + 'px, ' + (from.top - to.top) / px + 'px) scale(' + from.width / (62.338 * px) + ')' },
+             { transform: 'scale(0.3994)' }],
+            { duration: ZOOM_MS, easing: ZOOM_EASE }
+          );
+        }
+      } else {
+        // The big cover takes over on the square, then zooms back
+        instantly([cur, artBox], () => { parkArt(); el.screen.classList.remove('is-list'); });
+        artBox.style.transform = '';
+      }
+    }
+    el.listBtn.addEventListener('click', () => toggleList(!listOn));
+
     // ---------- Seek bar: click anywhere, or drag; the song moves on release ----------
     const timeAt = (clientX) => {
       const r = el.track.getBoundingClientRect(); // includes the press scale, so it follows the bar
