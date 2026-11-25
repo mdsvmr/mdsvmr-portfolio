@@ -237,7 +237,9 @@
     mask-image: linear-gradient(transparent, #000 4px, #000 calc(100% - 4px), transparent);
   }
   .screen__in.is-lyrics .lyrics { opacity: 1; transform: none; pointer-events: auto; }
-  .lyrics__list { transition: transform 520ms cubic-bezier(0.32, 0.72, 0, 1); }
+  /* On its own layer all the time (and the current line keeps a zero blur instead of no
+     filter), so nothing is redrawn when a scroll ends and the lines don't shift. */
+  .lyrics__list { transition: transform 520ms cubic-bezier(0.32, 0.72, 0, 1); will-change: transform; }
   .lyrics__list.is-instant { transition: none; }
   .lyrics__line {
     display: block;
@@ -254,7 +256,7 @@
     cursor: pointer;
     transition: opacity 320ms ease, filter 320ms ease;
   }
-  .lyrics__line.is-on { opacity: 1; filter: none; }
+  .lyrics__line.is-on { opacity: 1; filter: blur(0); }
   .lyrics__line.is-note { cursor: default; filter: none; }
   .tab--toggle { padding: 0; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 200ms ease; }
   @media (hover: hover) { .tab--toggle:hover { color: rgba(255, 255, 255, 0.65); } }
