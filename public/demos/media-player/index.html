@@ -317,8 +317,10 @@
     position: absolute;
     left: -0.48px;
     top: -0.48px;
-    width: 114.286px;
-    height: 114.286px;
+    width: calc(114.286px * 4); /* 4x, scaled back down: keeps the filter sharp in Safari (see .center img) */
+    height: calc(114.286px * 4);
+    transform: scale(0.25);
+    transform-origin: 0 0;
     pointer-events: none;
     overflow: visible;
   }
@@ -375,14 +377,17 @@
     height: 49.524px;
     transform: translate(-50%, -50%);
   }
+  /* Safari draws SVG filters (this button's shadows) at the element's own size, before the
+     stage is scaled up, so on phones they came out pixelated. The image is laid out 4x
+     larger and scaled back down: Safari then has 4x the pixels to work with. */
   .center img {
     position: absolute;
     left: -38.46%;
-    right: -38.46%;
     top: -23.08%;
-    bottom: -53.85%;
-    width: 176.92%;
-    height: 176.93%;
+    width: calc(176.92% * 4);
+    height: calc(176.93% * 4);
+    transform: scale(0.25);
+    transform-origin: 0 0;
     pointer-events: none;
   }
 </style>
