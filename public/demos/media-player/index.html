@@ -32,7 +32,10 @@
     top: 50%;
     width: 560px;
     height: 380.308px;
-    transform: translate(-50%, -50%) scale(var(--s, 1));
+    /* --size: the player is 380px wide in a 560px frame (Figma's is 347.013px), so the
+       whole player, inside included, is scaled up by 380 / 347.013 */
+    --size: 1.09506;
+    transform: translate(-50%, -50%) scale(calc(var(--s, 1) * var(--size)));
   }
 
   /* Hold switch on top of the body */
@@ -237,6 +240,20 @@
     background: #fff;
   }
   .tabs { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+  .lossless {
+    display: flex;
+    align-items: center;
+    gap: 1.826px;
+    /* Figma (player at 380px): SF Pro Regular 5.48 / line height 7 / 0%, #FFFFFF 30%.
+       Sizes here are in the 347px base, so divided by 380 / 347.013. */
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 5.004px;
+    font-weight: 400;
+    line-height: 6.392px;
+    letter-spacing: 0;
+  }
+  /* Figma: icon 7.48 × 3.99, 2px before the text (÷ 380 / 347.013 for the base size) */
+  .lossless svg { display: block; width: 6.831px; height: 3.644px; }
   .tab { width: 8.312px; height: 8.312px; border-radius: 1.781px; overflow: hidden; }
   .tab svg { display: block; width: 100%; height: 100%; }
 
@@ -291,18 +308,35 @@
   .seg--right  { clip-path: polygon(50% 50%, 100% 0, 100% 100%); }
   .seg--bottom { clip-path: polygon(50% 50%, 100% 100%, 0 100%); }
   .seg--left   { clip-path: polygon(50% 50%, 0 100%, 0 0); }
-  .seg.is-pressed { background-color: rgba(255, 255, 255, 0.05); }
   .seg:focus-visible { background-color: rgba(255, 255, 255, 0.07); }
+
+  /* Pressed look: only the pressed part of the wheel sinks in, like a real click wheel.
+     Its wedge darkens, gets an inner shadow along its edges (deepest at the top, where
+     the light comes from), and its icon shrinks a little. */
+  .press {
+    position: absolute;
+    left: -0.48px;
+    top: -0.48px;
+    width: 114.286px;
+    height: 114.286px;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .press path { opacity: 0; transition: opacity 90ms ease; }
+  .press path.is-down { opacity: 1; transition-duration: 30ms; }
+  /* The icon is kept as one ready-drawn layer and that layer is zoomed out, so every part
+     (the play triangle and the pause bars alike) shrinks together and keeps its shape */
+  .icon { transition: opacity 90ms ease, scale 90ms ease, transform 90ms ease; will-change: scale, transform; }
+  /* Pressed: zooms out, dims into the shadow and drops a hair, away from the light */
+  .icon.is-down { scale: 0.86; opacity: 0.75; transform: translateY(0.3px); transition-duration: 30ms; }
 
   .icon { position: absolute; pointer-events: none; transition: opacity 120ms ease; }
   .icon img, .icon i { position: absolute; display: block; }
-  /* Icon brightness: the design's 60% white, full white while pressed */
-  .icon.is-lit { filter: brightness(1.67); }
 
   .icon--prev, .icon--next {
     top: 50%;
     aspect-ratio: 1;
-    transform: translateY(-50%);
+    translate: 0 -50%; /* (translate, not transform, so the press zoom stays centred on the icon) */
   }
   .icon--prev { left: 3.64%; right: 87.27%; }
   .icon--next { left: 87.27%; right: 3.64%; }
@@ -317,7 +351,7 @@
     top: 3.64%;
     bottom: 88.18%;
     width: 9.351px;
-    transform: translateX(-50%);
+    translate: -50% 0;
   }
   .icon--shuffle img { inset: 8.31% 3.71% 6.71% 4.15%; width: auto; height: auto; }
 
@@ -326,13 +360,12 @@
     bottom: 4.16px;
     width: 16.624px;
     height: 8.312px;
-    transform: translateX(-50%);
+    translate: -50% 0;
   }
   .icon--playpause .play { left: 0; top: 0; width: 8.312px; height: 8.312px; }
   .icon--playpause .pause { left: 8.312px; top: 0; width: 8.312px; height: 8.312px; }
-  .pause i { background: var(--white-60); border-radius: 0.693px; }
-  .pause i:nth-child(1) { inset: 12.51% 58.34% 12.49% 16.66%; }
-  .pause i:nth-child(2) { inset: 12.51% 16.67% 12.49% 58.33%; }
+  /* Drawn as one SVG so both bars always render at exactly the same width */
+  .pause { overflow: visible; fill: var(--white-60); }
 
   .center {
     position: absolute;
@@ -399,6 +432,11 @@
                 </svg>
               </div>
               <!-- quote.bubble (SF Symbol, redrawn from the design at 1px grid) -->
+              <!-- Lossless badge: the design's exported icon + label -->
+              <div class="lossless">
+                <svg viewBox="0 0 200 107" fill="currentColor"><path d="M109.119 0C132.586 0 142.706 39.4027 151.173 65.377C155.639 46.7055 153.293 42.693 158.093 42.693C159.866 42.693 161.679 43.9101 161.679 46.117C161.679 46.2641 161.639 46.6654 161.559 47.2539L161.213 49.5945C160.266 55.8005 157.933 68.801 155.386 77.4948C175.972 131.623 191.266 60.3346 192.986 45.7693C193.239 43.6694 194.826 42.693 196.412 42.693C198.546 42.693 200.292 44.298 199.959 46.7189C196.266 70.2856 190.599 107 167.293 107C154.426 107 147.199 96.9019 141.479 85.3325C127.199 57.1915 120.626 9.93763 106.626 9.93763C102.133 9.93763 98.8129 14.6322 98.5862 14.6322C98.1595 14.6322 97.8262 12.7196 93.6395 7.47663C97.6262 2.90238 103.119 0 109.119 0ZM32.7732 0.0535001C69.4797 0.0535001 72.7463 97.2095 93.5195 97.2095C95.9595 97.2095 98.5862 95.7249 101.466 92.3678C103.053 95.0695 104.679 97.477 106.373 99.5902C102.226 104.338 97.0662 107 90.5996 107C67.3863 106.987 57.4131 67.9985 48.8398 41.6765C46.8131 50.1161 45.7598 57.7666 45.3598 61.1906C45.0931 63.3708 43.5065 64.3739 41.9065 64.3739C40.1198 64.3739 38.3198 63.1434 38.3198 60.9633L38.3598 60.455C39.5465 51.8014 41.9465 38.6939 44.6264 29.5588C41.0531 20.1695 36.5998 9.91087 30.0265 9.91087C16.7599 9.91087 9.15996 43.3484 7.02663 61.1906C6.7733 63.3708 5.17331 64.3739 3.57332 64.3739C1.79999 64.3739 0 63.1434 0 60.9633C0 60.8027 0.0133333 60.6289 0.0266665 60.455C3.77331 33.2503 10.7733 0.0535001 32.7732 0.0535001ZM70.8663 0C77.453 0 84.5196 3.45075 90.6262 11.5159C90.9596 11.9171 94.3729 17.2404 95.4529 19.0861C110.359 46.1705 117.573 97.3299 131.746 97.3299C134.199 97.3299 136.853 95.8051 139.786 92.3678C141.386 95.0695 143.013 97.477 144.693 99.5902C140.559 104.325 135.399 107 128.933 107C92.4396 106.987 88.4796 9.8975 68.373 9.8975C63.8397 9.8975 60.4797 14.6322 60.253 14.6322C59.8264 14.6322 59.493 12.7196 55.3064 7.47663C59.3997 2.782 64.933 0 70.8663 0Z"/></svg>
+                <span>Lossless</span>
+              </div>
               <div class="tab">
                 <svg viewBox="0 0 8.312 8.312" fill="none">
                   <path d="M2.035 1.605 H5.965 A0.535 0.535 0 0 1 6.500 2.140 V4.880 A0.535 0.535 0 0 1 5.965 5.415 H4.105 L2.780 6.395 V5.415 H2.035 A0.535 0.535 0 0 1 1.500 4.880 V2.140 A0.535 0.535 0 0 1 2.035 1.605 Z" stroke="rgba(255,255,255,0.5)" stroke-width="0.53" stroke-linejoin="round"/>
@@ -436,11 +474,35 @@
         <button type="button" class="seg seg--bottom" id="btn-play" data-action="play" aria-label="Play"></button>
         <button type="button" class="seg seg--left" id="btn-prev" data-action="prev" aria-label="Previous track"></button>
 
+        <!-- Pressed wedges (shown one at a time while a part of the wheel is pressed) -->
+        <svg class="press" viewBox="0 0 114.286 114.286" aria-hidden="true">
+          <defs>
+            <!-- Inner shadow: all round the wedge's edges, deeper along the top -->
+            <filter id="sink" x="-10%" y="-10%" width="120%" height="120%">
+              <feComponentTransfer in="SourceAlpha" result="mask"><feFuncA type="linear" slope="10"/></feComponentTransfer>
+              <feFlood flood-color="#000"/>
+              <feComposite in2="mask" operator="out" result="outside"/>
+              <feGaussianBlur in="outside" stdDeviation="1.4" result="rim"/>
+              <feOffset in="outside" dy="2"/>
+              <feGaussianBlur stdDeviation="2.6" result="top"/>
+              <feMerge><feMergeNode in="rim"/><feMergeNode in="top"/></feMerge>
+              <feComposite in2="mask" operator="in" result="shadow"/>
+              <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="shadow"/></feMerge>
+            </filter>
+          </defs>
+          <g fill="rgba(0, 0, 0, 0.3)" filter="url(#sink)">
+            <path data-press="next" d="M97.590 16.696A57.2 57.2 0 0 1 97.590 97.590L74.750 74.750A24.9 24.9 0 0 0 74.750 39.536Z"/>
+            <path data-press="play" d="M97.590 97.590A57.2 57.2 0 0 1 16.696 97.590L39.536 74.750A24.9 24.9 0 0 0 74.750 74.750Z"/>
+            <path data-press="prev" d="M16.696 97.590A57.2 57.2 0 0 1 16.696 16.696L39.536 39.536A24.9 24.9 0 0 0 39.536 74.750Z"/>
+            <path data-press="shuffle" d="M16.696 16.696A57.2 57.2 0 0 1 97.590 16.696L74.750 39.536A24.9 24.9 0 0 0 39.536 39.536Z"/>
+          </g>
+        </svg>
+
         <div class="icon icon--prev" data-icon="prev"><img class="arrow" src="assets/skip-arrow.svg" alt=""><i class="bar"></i></div>
         <div class="icon icon--next" data-icon="next"><img class="arrow" src="assets/skip-arrow.svg" alt=""><i class="bar"></i></div>
         <div class="icon icon--playpause" id="icon-play" data-icon="play">
           <img class="play" src="assets/play.svg" alt="">
-          <div class="pause" style="position:absolute"><i></i><i></i></div>
+          <svg class="pause" viewBox="0 0 8.312 8.312" style="position:absolute" aria-hidden="true"><rect x="1.385" y="1.040" width="2.078" height="6.234" rx="0.693"/><rect x="4.848" y="1.040" width="2.078" height="6.234" rx="0.693"/></svg>
         </div>
         <div class="icon icon--shuffle" data-icon="shuffle"><img src="assets/shuffle.svg" alt=""></div>
 
@@ -500,9 +562,8 @@
     tickClock();
 
     const PREVIEW = new URLSearchParams(location.search).has('preview'); // portfolio's on-page preview
-    // Zoomed: fetch the other covers up front so skipping shows them straight away
     // Fetch the other covers up front so changing songs shows them straight away
-    (PREVIEW ? TRACKS.slice(1, 3) : TRACKS.slice(1)).forEach((t) => { new Image().src = t.cover; });
+    TRACKS.slice(1).forEach((t) => { new Image().src = t.cover; });
 
     const $ = (id) => document.getElementById(id);
     const el = {
@@ -514,8 +575,8 @@
     const TRACK_W = 162.078;
 
     let index = 0;
-    // On-page preview (silent): songs 1, 2 and 3 play 5s each, then back to song 1, on repeat;
-    // each starts a little way in: song 1 at 0:21 (as in the design), song 2 at 1:32, song 3 at 3:40.
+    // On-page preview (silent): all songs in turn, 2s each, on repeat; the time runs on from
+    // 0:21 (as in the design) across the changes.
     // Zoomed: starts at 0:00, paused, until the user presses play.
     const PREVIEW_FROM = 21;
     let position = PREVIEW ? PREVIEW_FROM : 0;
@@ -694,8 +755,11 @@
       shuffle: () => shuffleTo(),
     };
 
-    // Pressed look: the segment lightens and its icon goes full white for a moment
-    const light = (name, on) => document.querySelector('[data-icon="' + name + '"]').classList.toggle('is-lit', on);
+    // Pressed look: the segment sinks in and its icon shrinks for a moment
+    const light = (name, on) => {
+      document.querySelector('[data-icon="' + name + '"]').classList.toggle('is-down', on);
+      document.querySelector('[data-press="' + name + '"]').classList.toggle('is-down', on);
+    };
     // A trackpad tap sends press and release almost together, so the pressed look is held
     // for at least PRESS_MIN_MS after it starts; a long press keeps it until release.
     const PRESS_MIN_MS = 180;
@@ -776,14 +840,16 @@
 
     // On-page preview: plays on its own, silently
     if (PREVIEW) {
-      const PREVIEW_STARTS = [PREVIEW_FROM, 92, 220]; // seconds into songs 1, 2, 3
-      const PREVIEW_EACH_MS = 5000;
+      // Every song in turn, 2s each, then back to the first. The time keeps running
+      // normally from 0:21 across the changes instead of jumping per song.
+      const PREVIEW_EACH_MS = 2000;
       let n = 0;
       start();
       setInterval(() => {
-        n = (n + 1) % PREVIEW_STARTS.length;
+        const t = position;
+        n = (n + 1) % TRACKS.length;
         load(n, true);
-        position = PREVIEW_STARTS[n];
+        position = t;
         renderTime();
       }, PREVIEW_EACH_MS);
     }
