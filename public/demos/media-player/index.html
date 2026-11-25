@@ -179,7 +179,7 @@
     will-change: transform;
     transition: transform 380ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .screen__in.is-lyrics .art { transform: translateY(-2.51px) scale(0.3994); } /* 62.338 → 24.898, top 16.19 */
+  .screen__in.is-lyrics .art { transform: translateY(-2.51px) scale(0.3994); cursor: pointer; } /* 62.338 → 24.898, top 16.19 */
   /* ---------- Song grid (list icon, bottom left) ----------
      Figma (÷ 380 / 347.013): the 10 covers at 27.31, 5 across from the small cover's
      spot, 37.31 apart across and 38 down. The song playing is the cover itself, moved
@@ -974,6 +974,8 @@
       if (on) buildLyrics();
     }
     el.lyricsBtn.addEventListener('click', () => toggleLyrics(!lyricsOn));
+    // Lyrics: the small cover goes back to the album view
+    el.art.parentElement.addEventListener('click', () => { if (lyricsOn) toggleLyrics(false); });
 
     // ---------- Song grid (list icon) ----------
     // Opening: the playing song's square flies in from the big cover's spot and stays as the
@@ -993,7 +995,8 @@
       img.src = tr.cover;
       img.alt = '';
       b.appendChild(img);
-      b.addEventListener('click', () => { if (i !== index) load(i, true); else if (!playing) start(); });
+      // another cover plays that song; the playing one goes back to the album view
+      b.addEventListener('click', () => { if (i !== index) load(i, true); else toggleList(false); });
       el.grid.appendChild(b);
       return b;
     });
