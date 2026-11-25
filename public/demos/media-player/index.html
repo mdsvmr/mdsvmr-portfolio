@@ -239,7 +239,9 @@
   .screen__in.is-lyrics .lyrics { opacity: 1; transform: none; pointer-events: auto; }
   /* On its own layer all the time (and the current line keeps a zero blur instead of no
      filter), so nothing is redrawn when a scroll ends and the lines don't shift. */
-  .lyrics__list { transition: transform 520ms cubic-bezier(0.32, 0.72, 0, 1); will-change: transform; }
+  /* Ease in-out like the cover: the old curve crept the last few pixels for ~0.3s, which
+     read as the lines still moving after the scroll seemed done. */
+  .lyrics__list { transition: transform 450ms cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
   .lyrics__list.is-instant { transition: none; }
   .lyrics__line {
     display: block;
@@ -251,11 +253,12 @@
     line-height: 10.958px; /* Figma 12 */
     letter-spacing: -0.28px;
     color: #fff;
-    opacity: 0.4;
+    opacity: 0.5; /* not sung yet */
     filter: blur(0.52px);
     cursor: pointer;
     transition: opacity 320ms ease, filter 320ms ease;
   }
+  .lyrics__line.is-past { opacity: 0.1; } /* already sung */
   .lyrics__line.is-on { opacity: 1; filter: blur(0); }
   .lyrics__line.is-note { cursor: default; filter: none; }
   .tab--toggle { padding: 0; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 200ms ease; }
@@ -960,6 +963,7 @@
       if (lyricIdx >= 0 && lines[lyricIdx]) lines[lyricIdx].node.classList.remove('is-on');
       lyricIdx = i;
       if (i >= 0) lines[i].node.classList.add('is-on');
+      lines.forEach((l, k) => l.node.classList.toggle('is-past', k < i));
       const focus = nodes[Math.max(0, i)];
       const y = LYRICS_CENTER - (focus.offsetTop + focus.offsetHeight / 2);
       el.lyricsList.classList.toggle('is-instant', instant === true || reduceMotion);
