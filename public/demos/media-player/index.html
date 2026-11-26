@@ -260,6 +260,9 @@
   }
   .lyrics__line.is-past { opacity: 0.15; } /* already sung */
   .lyrics__line.is-on { opacity: 1; filter: blur(0); }
+  /* Scrolling by hand: the box takes finger swipes, and the lines lose their blur to be read */
+  .lyrics { touch-action: none; }
+  .lyrics.is-browsing .lyrics__line { filter: blur(0); }
   .lyrics__line.is-note { cursor: default; filter: none; }
   .tab--toggle { padding: 0; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 200ms ease; }
   @media (hover: hover) { .tab--toggle:hover { color: rgba(255, 255, 255, 0.65); } }
@@ -927,6 +930,7 @@
     const songKey = (tr) => tr.src.split('/').pop().replace(/\.[^.]+$/, '');
 
     function buildLyrics() {
+      if (browsing) { browsing = false; clearTimeout(browseTimer); el.lyrics.classList.remove('is-browsing'); el.lyricsList.classList.remove('is-instant'); }
       el.lyricsList.textContent = '';
       lyricIdx = -2;
       const parsed = parseLrc((window.LYRICS || {})[songKey(TRACKS[index])]);
@@ -937,6 +941,7 @@
         const line = { t, node };
         node.addEventListener('click', () => {
           if (line.t === null) return;
+          endBrowse();
           seek(line.t);
           if (!playing) start();
         });
@@ -952,25 +957,95 @@
       syncLyrics(true);
     }
 
-    function syncLyrics(instant) {
+    function syncLyrics(instant, force) {
       if (!lyricsOn) return;
       const nodes = el.lyricsList.children;
       if (!nodes.length) return;
       const t = now();
       let i = -1;
       while (i + 1 < lines.length && lines[i + 1].t !== null && lines[i + 1].t <= t + 0.15) i++;
-      if (i === lyricIdx && instant !== true) return;
+      if (i === lyricIdx && instant !== true && force !== true) return;
       if (lyricIdx >= 0 && lines[lyricIdx]) lines[lyricIdx].node.classList.remove('is-on');
       lyricIdx = i;
       if (i >= 0) lines[i].node.classList.add('is-on');
       lines.forEach((l, k) => l.node.classList.toggle('is-past', k < i));
+      if (browsing) return; // the user is scrolling the lyrics: leave them where they are
       const focus = nodes[Math.max(0, i)];
       const y = LYRICS_CENTER - (focus.offsetTop + focus.offsetHeight / 2);
+      listY = y;
       el.lyricsList.classList.toggle('is-instant', instant === true || reduceMotion);
       el.lyricsList.style.transform = 'translateY(' + y + 'px)';
       if (instant === true) { void el.lyricsList.offsetHeight; el.lyricsList.classList.remove('is-instant'); }
     }
 
+
+    // ---------- Scrolling the lyrics by hand ----------
+    // Wheel / trackpad (and a finger swipe on touch screens). While browsing, the lyrics stop
+    // following the song; BROWSE_MS after the last scroll they glide back to the
+    // current line.
+    const BROWSE_MS = 2500;
+    let browsing = false, listY = 0, browseTimer = 0;
+    const lyricsBounds = () => {
+      const nodes = el.lyricsList.children;
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      return {
+        max: LYRICS_CENTER - (first.offsetTop + first.offsetHeight / 2),
+        min: LYRICS_CENTER - (last.offsetTop + last.offsetHeight / 2),
+      };
+    };
+    const scrollLyricsBy = (dy) => {
+      if (!lyricsOn || !el.lyricsList.children.length) return;
+      if (!browsing) {
+        browsing = true;
+        el.lyrics.classList.add('is-browsing');
+        el.lyricsList.classList.add('is-instant');
+      }
+      const b = lyricsBounds();
+      listY = Math.max(b.min, Math.min(b.max, listY + dy));
+      el.lyricsList.style.transform = 'translateY(' + listY + 'px)';
+      clearTimeout(browseTimer);
+      browseTimer = setTimeout(endBrowse, BROWSE_MS);
+    };
+    function endBrowse() {
+      clearTimeout(browseTimer);
+      if (!browsing) return;
+      browsing = false;
+      el.lyrics.classList.remove('is-browsing');
+      el.lyricsList.classList.remove('is-instant');
+      syncLyrics(false, true); // glide back to the line being sung
+    }
+    // screen px → CSS px inside the stage
+    const cssPx = (v) => v / (el.lyrics.getBoundingClientRect().height / el.lyrics.offsetHeight);
+    el.lyrics.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.lyrics.offsetHeight : 1;
+      scrollLyricsBy(-cssPx(e.deltaY * unit));
+    }, { passive: false });
+    let drag = null;
+    // Swiping with a finger scrolls too (a phone has no wheel); a mouse can't drag them
+    el.lyrics.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'touch') return;
+      drag = { id: e.pointerId, y: e.clientY, moved: false };
+    });
+    el.lyrics.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const dy = e.clientY - drag.y;
+      if (!drag.moved && Math.abs(dy) < 4) return; // still a tap
+      if (!drag.moved) { drag.moved = true; try { el.lyrics.setPointerCapture(e.pointerId); } catch (err) {} }
+      drag.y = e.clientY;
+      scrollLyricsBy(cssPx(dy));
+    });
+    const endDrag = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (drag.moved) { // a drag is not a tap on a line
+        const stop = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+        el.lyrics.addEventListener('click', stop, { capture: true, once: true });
+        setTimeout(() => el.lyrics.removeEventListener('click', stop, { capture: true }), 0);
+      }
+      drag = null;
+    };
+    el.lyrics.addEventListener('pointerup', endDrag);
+    el.lyrics.addEventListener('pointercancel', endDrag);
 
     function toggleLyrics(on) {
       if (on && listOn) toggleList(false);
