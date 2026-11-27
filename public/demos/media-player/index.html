@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mixtape Player</title>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
 <style>
   /* Figma: MDSVMR°— PORTFOLIO, node 1268:1234 "Media Player" (560 × 380.308) */
   :root {
@@ -510,10 +516,81 @@
     pointer-events: none;
   }
 
+
+  /* ---------- 3D view (button top right) ----------
+     three-d.js: the player's current look is captured as an image and becomes the front of
+     a 3D body (three.js), drawn on .body3d. Face-on it matches the page exactly, so the
+     page (.turn) is swapped out for it without a jump, then it turns on its own. */
+  .turn { position: absolute; inset: 0; }
+  .body3d { position: fixed; inset: 0; width: 100%; height: 100%; display: none; }
+  html.is-3d .body3d { display: block; }
+  /* the page and the 3D view cross-fade (as the turn starts / ends), so the small
+     differences in how the captured text is drawn never show as a jump */
+  .turn { transition: opacity 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  /* the off-screen copy three-d.js captures: same look, without its text (drawn separately) */
+  .turn.is-capture * { -webkit-text-fill-color: transparent !important; text-shadow: none !important; }
+  html.is-3d-ready .turn { opacity: 0; filter: blur(8px); pointer-events: none; }
+  /* …and the 3D view comes out of the same blur (like the site's blocks when they appear),
+     so the two never sit side by side sharp */
+  .body3d { transition: filter 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  html.is-3d .body3d { filter: blur(8px); }
+  html.is-3d-ready .body3d { filter: none; }
+  /* going back to 2D the 3D view also fades out as it blurs, so its blurred edge never lingers
+     round the device as a shadow: it holds at first (the page is still coming in), then goes */
+  html.is-3d-leaving .body3d {
+    opacity: 0;
+    transition: filter 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 400ms cubic-bezier(0.55, 0, 0.75, 0.2);
+  }
+
+  /* 3D switch: plain text like the site's language switch (EN / 日): grey with a dotted
+     underline when off, dark with a solid underline when on */
+  @font-face {
+    font-family: "Messina Sans";
+    src: url("/fonts/MessinaSans-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
+  .view-toggle {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    color: #86909c;
+    font: 400 14px/1.5 "Messina Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    /* the underline runs under the icon and the word */
+    background-image: linear-gradient(to right, currentColor 50%, transparent 50%);
+    background-position: 0 100%;
+    background-size: 2px 1px;
+    background-repeat: round no-repeat;
+    transition: color 0.15s ease;
+  }
+  .view-toggle[hidden] { display: none; } /* not in the index's preview box */
+  .view-toggle svg { width: 13px; height: 13px; flex: none; }
+  @media (hover: hover) { .view-toggle:hover { color: #111111; } }
+  .view-toggle[aria-pressed="true"] {
+    color: #111111;
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 100% 1px;
+    background-repeat: no-repeat;
+  }
+  .view-toggle[aria-busy="true"] { cursor: progress; }
+  .view-toggle:focus-visible { outline: 2px solid #3c82f6; outline-offset: 2px; }
 </style>
 </head>
 <body>
+  <canvas class="body3d" id="body3d" aria-hidden="true"></canvas>
   <div class="stage">
+   <div class="turn">
     <div class="hold" aria-hidden="true"></div>
     <svg class="shell" viewBox="0 0 347.013 157.922" aria-hidden="true">
       <defs>
@@ -632,6 +709,7 @@
         <div class="center" aria-hidden="true"><img src="assets/center.svg" alt=""></div>
       </div>
     </div>
+   </div>
   </div>
 
   <script src="assets/lyrics.js"></script>
@@ -642,6 +720,7 @@
     const fit = () => {
       if (!innerWidth || !innerHeight) return;
       stage.style.setProperty('--s', Math.min(innerWidth / 560, innerHeight / 380.308));
+      window.dispatchEvent(new Event('player-fit')); // the 3D view follows
     };
     fit();
     addEventListener('resize', fit);
@@ -1227,6 +1306,11 @@
     }
   })();
   </script>
+  <button type="button" class="view-toggle" id="view-toggle" aria-pressed="false" hidden>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M8 1.75 13.5 4.75v6.5L8 14.25 2.5 11.25v-6.5L8 1.75Z"/><path vector-effect="non-scaling-stroke" d="M2.5 4.75 8 7.75l5.5-3M8 7.75v6.5"/></svg>
+    <span id="view-label">3D</span>
+  </button>
+  <script type="module" src="three-d.js"></script>
   <script src="/demos/click-hint.js" data-target="#icon-play"></script>
 </body>
 </html>
