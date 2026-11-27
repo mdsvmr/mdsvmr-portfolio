@@ -262,6 +262,18 @@
   .lyrics__line.is-on { opacity: 1; filter: blur(0); }
   /* Scrolling by hand: the box takes finger swipes, and the lines lose their blur to be read */
   .lyrics { touch-action: none; }
+  /* Scrolling down hides the bottom bar (it fades out downwards) and the lyrics run on to
+     the bottom of the screen; scrolling up brings the bar back (fading in upwards). */
+  .lyrics {
+    transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1), opacity 300ms ease,
+      height 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .screen__in.is-bar-hidden .lyrics { height: 105.011px; } /* 6.4px (at 400px) above the screen's bottom, same as the gap under the status bar: 126.753 - 16.19 - 5.552 */
+  .bottom {
+    transition: opacity 280ms ease, transform 320ms cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity;
+  }
+  .screen__in.is-bar-hidden .bottom { opacity: 0; transform: translateY(8px); pointer-events: none; }
   .lyrics.is-browsing .lyrics__line { filter: blur(0); }
   .lyrics__line.is-note { cursor: default; filter: none; }
   .tab--toggle { padding: 0; color: rgba(255, 255, 255, 0.5); cursor: pointer; transition: color 200ms ease; }
@@ -930,7 +942,8 @@
     const songKey = (tr) => tr.src.split('/').pop().replace(/\.[^.]+$/, '');
 
     function buildLyrics() {
-      if (browsing) { browsing = false; clearTimeout(browseTimer); el.lyrics.classList.remove('is-browsing'); el.lyricsList.classList.remove('is-instant'); }
+      if (browsing) { browsing = false; el.lyrics.classList.remove('is-browsing'); el.lyricsList.classList.remove('is-instant'); }
+      setBarHidden(false);
       el.lyricsList.textContent = '';
       lyricIdx = -2;
       const parsed = parseLrc((window.LYRICS || {})[songKey(TRACKS[index])]);
@@ -942,6 +955,7 @@
         node.addEventListener('click', () => {
           if (line.t === null) return;
           endBrowse();
+          setBarHidden(false); // picking a line brings the bar back
           seek(line.t);
           if (!playing) start();
         });
@@ -969,7 +983,21 @@
       lyricIdx = i;
       if (i >= 0) lines[i].node.classList.add('is-on');
       lines.forEach((l, k) => l.node.classList.toggle('is-past', k < i));
-      if (browsing) return; // the user is scrolling the lyrics: leave them where they are
+      if (browsing) {
+        // Leave the lyrics where the user scrolled them, until the song gets to the line in
+        // the middle of the box: the new line, or the one just finished (the user scrolled
+        // back to where the song is), each with its slot of half a gap either side.
+        if (i < 0) return;
+        const half = 7.305 / 2;
+        const inMiddle = (k) => {
+          if (k < 0) return false;
+          const n = lines[k].node;
+          return LYRICS_CENTER >= listY + n.offsetTop - half && LYRICS_CENTER <= listY + n.offsetTop + n.offsetHeight + half;
+        };
+        if (!inMiddle(i) && !inMiddle(i - 1)) return;
+        browsing = false; // caught up: follow the song again
+        el.lyrics.classList.remove('is-browsing'); // the bar stays as it is
+      }
       const focus = nodes[Math.max(0, i)];
       const y = LYRICS_CENTER - (focus.offsetTop + focus.offsetHeight / 2);
       listY = y;
@@ -980,11 +1008,11 @@
 
 
     // ---------- Scrolling the lyrics by hand ----------
-    // Wheel / trackpad (and a finger swipe on touch screens). While browsing, the lyrics stop
-    // following the song; BROWSE_MS after the last scroll they glide back to the
-    // current line.
-    const BROWSE_MS = 2500;
-    let browsing = false, listY = 0, browseTimer = 0;
+    // Wheel / trackpad (and a finger swipe on touch screens). While browsing, the lyrics stay
+    // where the user left them (lines sharp, to be read) and don't jump back. When the song
+    // reaches the line sitting in the middle of what they're looking at, the lyrics pick
+    // up the song again from there (blur back on).
+    let browsing = false, listY = 0;
     const lyricsBounds = () => {
       const nodes = el.lyricsList.children;
       const first = nodes[0], last = nodes[nodes.length - 1];
@@ -993,8 +1021,11 @@
         min: LYRICS_CENTER - (last.offsetTop + last.offsetHeight / 2),
       };
     };
+    const setBarHidden = (on) => el.screen.classList.toggle('is-bar-hidden', on);
     const scrollLyricsBy = (dy) => {
       if (!lyricsOn || !el.lyricsList.children.length) return;
+      if (dy < 0) setBarHidden(true);       // reading on (scrolling down): bar out of the way
+      else if (dy > 0) setBarHidden(false); // scrolling back up: bar returns
       if (!browsing) {
         browsing = true;
         el.lyrics.classList.add('is-browsing');
@@ -1003,11 +1034,8 @@
       const b = lyricsBounds();
       listY = Math.max(b.min, Math.min(b.max, listY + dy));
       el.lyricsList.style.transform = 'translateY(' + listY + 'px)';
-      clearTimeout(browseTimer);
-      browseTimer = setTimeout(endBrowse, BROWSE_MS);
     };
     function endBrowse() {
-      clearTimeout(browseTimer);
       if (!browsing) return;
       browsing = false;
       el.lyrics.classList.remove('is-browsing');
@@ -1052,6 +1080,7 @@
       lyricsOn = on;
       el.lyricsBtn.setAttribute('aria-pressed', String(on));
       el.screen.classList.toggle('is-lyrics', on);
+      if (!on) setBarHidden(false);
       if (on) buildLyrics();
     }
     el.lyricsBtn.addEventListener('click', () => toggleLyrics(!lyricsOn));
