@@ -865,11 +865,3 @@ function leave() {
   };
   mode = 'home'; run();
 }
-
-// Opened as "?preview&3d" (the index's zoomed view on a phone): go straight into the turning
-// 3D view, without showing the 2D page first. If 3D can't start, the 2D page comes back.
-if (PREVIEW && new URLSearchParams(location.search).has('3d')) {
-  const go = () => enter().then(() => { if (!on) root.classList.remove('is-3d-direct'); });
-  if (document.readyState === 'complete') go();
-  else addEventListener('load', go, { once: true });
-}
