@@ -471,6 +471,12 @@
       easing: "ease-in-out",
       fill: "forwards"
     });
+    // Tell a zoomed demo it is closing, so it can fade its own page controls (like the
+    // Mixtape Player's 3D switch) with the caption instead of shrinking with the page
+    var closingFrame = demoFrame(s.clone);
+    if (closingFrame) {
+      try { closingFrame.contentDocument.documentElement.classList.add("is-zoom-closing"); } catch (e) {}
+    }
     if (s.caption) {
       s.caption.getAnimations().forEach(function (a) { a.cancel(); });
       s.caption.animate([{ opacity: getComputedStyle(s.caption).opacity }, { opacity: 0 }], {

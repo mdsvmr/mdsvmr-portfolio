@@ -575,6 +575,8 @@
     transition: color 0.15s ease;
   }
   .view-toggle[hidden] { display: none; } /* not in the index's preview box */
+  /* zooming back out to the index: the switch fades with the caption, not after */
+  html.is-zoom-closing .view-toggle { opacity: 0; pointer-events: none; transition: opacity 150ms ease-out; }
   .view-toggle svg { width: 13px; height: 13px; flex: none; }
   @media (hover: hover) { .view-toggle:hover { color: #111111; } }
   .view-toggle[aria-pressed="true"] {
