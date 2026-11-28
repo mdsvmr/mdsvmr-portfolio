@@ -204,6 +204,17 @@
         listenForClicks(frame);
       } else {
         clone.classList.add("is-preview");
+        // a demo can give the phone's zoomed view its own version (still not usable)
+        if (frame.dataset.zoomMobileSrc) {
+          // …picking up where the small preview is right now, if it says (window.zoomState)
+          var demoState = "";
+          try {
+            var live = demoFrame(source).contentWindow;
+            if (live && typeof live.zoomState === "function") demoState = live.zoomState() || "";
+          } catch (e) {}
+          var url = frame.dataset.zoomMobileSrc;
+          frame.src = demoState ? url + (url.indexOf("?") < 0 ? "?" : "&") + demoState : url;
+        }
       }
     }
     clone.style.left = rect.left + "px";

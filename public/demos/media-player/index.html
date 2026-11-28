@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mixtape Player</title>
+<script>
+  // Opened as "?preview&3d" (the index's zoomed view on a phone): straight into the turning
+  // 3D view, so the 2D page is never shown
+  (function () {
+    var q = new URLSearchParams(location.search);
+    if (q.has('preview') && q.has('3d')) document.documentElement.classList.add('is-3d-direct');
+  })();
+</script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
@@ -535,6 +543,7 @@
   .body3d { transition: filter 450ms cubic-bezier(0.25, 0.46, 0.45, 0.94); }
   html.is-3d .body3d { filter: blur(8px); }
   html.is-3d-ready .body3d { filter: none; }
+  html.is-3d-direct .turn:not(.is-capture) { opacity: 0; } /* straight into 3D: no 2D first */
   /* going back to 2D the 3D view also fades out as it blurs, so its blurred edge never lingers
      round the device as a shadow: it holds at first (the page is still coming in), then goes */
   html.is-3d-leaving .body3d {
@@ -1296,15 +1305,27 @@
       // Every song in turn, 2s each, then back to the first. The time keeps running
       // normally from 0:21 across the changes instead of jumping per song.
       const PREVIEW_EACH_MS = 2000;
-      let n = 0;
-      start();
-      setInterval(() => {
-        const t = position;
-        n = (n + 1) % TRACKS.length;
-        load(n, true);
-        position = t;
+      const q = new URLSearchParams(location.search);
+      // Zoomed on a phone (straight into 3D): the song and time the small preview was showing
+      // when it was tapped, held still (the 3D view is a picture of it)
+      if (q.has('3d')) {
+        const i = parseInt(q.get('track'), 10), at = parseFloat(q.get('at'));
+        if (i > 0 && i < TRACKS.length) load(i, false);
+        if (at >= 0) position = at;
         renderTime();
-      }, PREVIEW_EACH_MS);
+      } else {
+        let n = 0;
+        start();
+        setInterval(() => {
+          const t = position;
+          n = (n + 1) % TRACKS.length;
+          load(n, true);
+          position = t;
+          renderTime();
+        }, PREVIEW_EACH_MS);
+        // what it's showing right now, for the index's zoomed view (zoom.js)
+        window.zoomState = () => 'track=' + index + '&at=' + Math.floor(position);
+      }
     }
   })();
   </script>
